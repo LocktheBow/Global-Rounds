@@ -11,4 +11,5 @@ else
 fi
 
 pnpm install --frozen-lockfile
+pnpm --filter backend build
 pnpm --dir frontend build
