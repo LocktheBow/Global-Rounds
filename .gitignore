@@ -41,6 +41,7 @@ Thumbs.db
 # Python artefacts (automation prototype etc.)
 # ---------------------
 .venv/
-automation_prototype/
+automation_prototype/.venv/
+automation_prototype/__pycache__/
 **/__pycache__/
 *.py[cod]
