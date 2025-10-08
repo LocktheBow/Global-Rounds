@@ -58,6 +58,8 @@ const state = {
     leadTimeDelta: 0,
     skus: '',
   },
+  commandInsights: null,
+  commandError: null,
 };
 
 try {
@@ -106,12 +108,17 @@ const elements = {
   chartTaskStatus: document.getElementById('chart-task-status'),
   chartTaskStatusEmpty: document.getElementById('chart-task-status-empty'),
   chartTaskStatusLegend: document.getElementById('chart-task-status-legend'),
+  chartTaskHeadline: document.getElementById('chart-task-headline'),
+  chartTaskBadge: document.getElementById('chart-task-badge'),
   chartFinance: document.getElementById('chart-finance'),
   chartFinanceEmpty: document.getElementById('chart-finance-empty'),
   chartFinanceLegend: document.getElementById('chart-finance-legend'),
+  chartFinanceHeadline: document.getElementById('chart-finance-headline'),
   chartInventoryActions: document.getElementById('chart-inventory-actions'),
   chartInventoryEmpty: document.getElementById('chart-inventory-empty'),
   chartInventoryLegend: document.getElementById('chart-inventory-legend'),
+  chartInventoryHeadline: document.getElementById('chart-inventory-headline'),
+  chartInventoryBadge: document.getElementById('chart-inventory-badge'),
   chartTaskNote: document.getElementById('chart-task-note'),
   chartFinanceNote: document.getElementById('chart-finance-note'),
   chartInventoryNote: document.getElementById('chart-inventory-note'),
@@ -619,6 +626,181 @@ function getInsightTasks() {
     return embedded.tasks;
   }
   return [];
+}
+
+function computeTaskInsightsFromState(tasks = getInsightTasks()) {
+  const counts = tasks.reduce(
+    (acc, task) => {
+      const status = String(task?.status || '').toLowerCase();
+      if (status === 'open') {
+        acc.open += 1;
+      } else if (status === 'in_progress') {
+        acc.inProgress += 1;
+      } else if (status === 'closed') {
+        acc.closed += 1;
+      }
+      const type = String(task?.task_type || '').toLowerCase();
+      if (type === 'sla_breach' && status !== 'closed') {
+        acc.slaBreaches += 1;
+      }
+      return acc;
+    },
+    { open: 0, inProgress: 0, closed: 0, slaBreaches: 0 },
+  );
+
+  return {
+    total: counts.open + counts.inProgress + counts.closed,
+    slaBreaches: counts.slaBreaches,
+    dataset: [
+      { label: 'Open', value: counts.open, color: CHART_COLORS[0] },
+      { label: 'In Progress', value: counts.inProgress, color: CHART_COLORS[1] },
+      { label: 'Closed', value: counts.closed, color: CHART_COLORS[2] },
+    ],
+  };
+}
+
+function computeFinanceInsightsFromState(finance = state.data?.finance) {
+  const snapshotArray = Array.isArray(finance?.latest_snapshot)
+    ? finance.latest_snapshot
+    : finance?.latest_snapshot
+    ? [finance.latest_snapshot]
+    : [];
+  const snapshot = snapshotArray[0];
+  if (!snapshot) {
+    return {
+      dataset: [],
+      meta: {
+        snapshotDate: null,
+        baselineDso: FINANCE_DSO_BASELINE,
+      },
+    };
+  }
+
+  const laborMinutes = parseNumericValue(snapshot.labor_minutes_saved);
+  const laborHours = Number.isFinite(laborMinutes) ? laborMinutes / 60 : 0;
+  const cash = parseNumericValue(snapshot.projected_cash_recovered);
+  const dsoCurrent = parseNumericValue(snapshot.dso);
+  const dsoImprovement = Math.max(FINANCE_DSO_BASELINE - dsoCurrent, 0);
+
+  return {
+    dataset: [
+      {
+        label: 'Labor hrs saved',
+        value: Number.isFinite(laborHours) ? Number(laborHours.toFixed(2)) : 0,
+        displayValue: `${laborHours.toFixed(1)} hrs`,
+        color: CHART_COLORS[0],
+      },
+      {
+        label: 'Projected cash ($K)',
+        value: Number.isFinite(cash) ? Number((cash / 1000).toFixed(2)) : 0,
+        displayValue: usdFormatter.format(cash),
+        color: CHART_COLORS[1],
+      },
+      {
+        label: 'DSO improvement',
+        value: Number.isFinite(dsoImprovement) ? Number(dsoImprovement.toFixed(2)) : 0,
+        displayValue: `${dsoImprovement.toFixed(1)} days`,
+        color: CHART_COLORS[2],
+      },
+    ].filter((item) => Number.isFinite(item.value)),
+    meta: {
+      snapshotDate: snapshot.date ?? null,
+      baselineDso: FINANCE_DSO_BASELINE,
+    },
+  };
+}
+
+function computeInventoryInsightsFromState(entries = state.inventoryForecast) {
+  const list = Array.isArray(entries)
+    ? entries
+    : Object.entries(entries || {}).map(([sku, details]) => ({ supply_sku: sku, ...(details || {}) }));
+  const counts = computeInventoryActionCounts(list);
+  const dataset = buildInventoryDataset(counts).filter((item) => item.value > 0);
+  return {
+    dataset,
+    totalSkus: list.length,
+    scenarioAvailable: Boolean(state.inventoryScenarioResult),
+  };
+}
+
+function computeCommandInsightsFallback() {
+  return {
+    tasks: computeTaskInsightsFromState(),
+    finance: computeFinanceInsightsFromState(),
+    inventory: computeInventoryInsightsFromState(),
+  };
+}
+
+function getCommandInsights() {
+  if (!state.commandInsights) {
+    state.commandInsights = computeCommandInsightsFallback();
+  }
+  return state.commandInsights;
+}
+
+function getCommandTaskInsights() {
+  return getCommandInsights().tasks;
+}
+
+function getCommandFinanceInsights() {
+  return getCommandInsights().finance;
+}
+
+function getCommandInventoryInsights() {
+  return getCommandInsights().inventory;
+}
+
+function normalizeCommandInsights(payload) {
+  const fallback = computeCommandInsightsFallback();
+  if (!payload || typeof payload !== 'object') {
+    return fallback;
+  }
+
+  const normalizeSegments = (segments = [], defaults = []) =>
+    Array.isArray(segments)
+      ? segments.map((segment, index) => ({
+          label: String(segment?.label ?? ''),
+          value: Number(segment?.value) || 0,
+          displayValue:
+            segment?.displayValue !== undefined && segment?.displayValue !== null
+              ? String(segment.displayValue)
+              : undefined,
+          color: segment?.color || defaults[index % defaults.length] || CHART_COLORS[index % CHART_COLORS.length],
+        }))
+      : [];
+
+  const tasks = payload.tasks
+    ? {
+        total: Number(payload.tasks.total) || 0,
+        slaBreaches: Number(payload.tasks.slaBreaches) || 0,
+        dataset: normalizeSegments(payload.tasks.dataset, [
+          '#38bdf8',
+          '#22d3ee',
+          '#14b8a6',
+        ]),
+      }
+    : fallback.tasks;
+
+  const finance = payload.finance
+    ? {
+        dataset: normalizeSegments(payload.finance.dataset, ['#22d3ee', '#38bdf8', '#facc15']),
+        meta: {
+          snapshotDate: payload.finance?.meta?.snapshotDate ?? null,
+          baselineDso:
+            Number(payload.finance?.meta?.baselineDso) || fallback.finance.meta.baselineDso || FINANCE_DSO_BASELINE,
+        },
+      }
+    : fallback.finance;
+
+  const inventory = payload.inventory
+    ? {
+        dataset: normalizeSegments(payload.inventory.dataset, ['#f97316', '#fb7185', '#22c55e']),
+        totalSkus: Number(payload.inventory.totalSkus) || 0,
+        scenarioAvailable: Boolean(payload.inventory.scenarioAvailable),
+      }
+    : fallback.inventory;
+
+  return { tasks, finance, inventory };
 }
 
 function toggleChartState(canvas, emptyElement, hasData) {
@@ -1925,6 +2107,7 @@ function updateData(data, message, options = {}) {
   }
   renderAll();
   renderScenarioSummary();
+  refreshCommandInsights({ silent: true });
 }
 
 function renderAll() {
@@ -1950,52 +2133,53 @@ function renderTaskInsights() {
   if (!elements.chartTaskStatus) {
     return;
   }
-  const tasks = getInsightTasks();
-  const counts = tasks.reduce(
-    (acc, task) => {
-      const status = String(task.status || '').toLowerCase();
-      if (status === 'open') {
-        acc.open += 1;
-      } else if (status === 'in_progress') {
-        acc.inProgress += 1;
-      } else if (status === 'closed') {
-        acc.closed += 1;
-      }
-      const type = String(task.task_type || '').toLowerCase();
-      if (type === 'sla_breach' && status !== 'closed') {
-        acc.sla += 1;
-      }
-      return acc;
-    },
-    { open: 0, inProgress: 0, closed: 0, sla: 0 },
-  );
-  const dataset = [
-    { label: 'Open', value: counts.open, color: CHART_COLORS[0] },
-    { label: 'In Progress', value: counts.inProgress, color: CHART_COLORS[1] },
-    { label: 'Closed', value: counts.closed, color: CHART_COLORS[2] },
-  ];
-  const total = counts.open + counts.inProgress + counts.closed;
-  const hasData = total > 0;
+  const insight = getCommandTaskInsights();
+  const dataset = Array.isArray(insight?.dataset) ? insight.dataset : [];
+  const total = Number(insight?.total ?? 0);
+  const slaBreaches = Number(insight?.slaBreaches ?? 0);
+  const usable = dataset.filter((item) => Number(item?.value) > 0);
+  const hasData = total > 0 && usable.length > 0;
+
+  if (elements.chartTaskHeadline) {
+    elements.chartTaskHeadline.textContent = hasData
+      ? `${total.toLocaleString()} tasks`
+      : 'No active tasks';
+  }
+  if (elements.chartTaskBadge) {
+    if (slaBreaches > 0) {
+      elements.chartTaskBadge.textContent = slaBreaches === 1 ? '1 SLA at risk' : `${slaBreaches} SLAs at risk`;
+      elements.chartTaskBadge.hidden = false;
+    } else {
+      elements.chartTaskBadge.hidden = true;
+    }
+  }
   toggleChartState(elements.chartTaskStatus, elements.chartTaskStatusEmpty, hasData);
   if (!hasData) {
-    updateChartLegend(elements.chartTaskStatusLegend, [], { emptyMessage: 'No tasks available.' });
+    if (elements.chartTaskStatusEmpty) {
+      elements.chartTaskStatusEmpty.textContent =
+        state.commandError || 'Run the agents to populate the unified queue.';
+    }
+    updateChartLegend(elements.chartTaskStatusLegend, [], {
+      emptyMessage: state.commandError || 'Run the agents to populate the unified queue.',
+    });
     if (elements.chartTaskNote) {
-      elements.chartTaskNote.textContent = 'Breakdown of unified queue by live status.';
+      elements.chartTaskNote.textContent = state.commandError
+        ? state.commandError
+        : 'Run the agents to populate the unified queue.';
     }
     return;
   }
   drawDonutChart(elements.chartTaskStatus, dataset, {
-    centerLabel: String(total),
+    centerLabel: total.toLocaleString(),
     centerSubLabel: 'tasks',
   });
-  updateChartLegend(
-    elements.chartTaskStatusLegend,
-    dataset.filter((item) => item.value > 0),
-    { emptyMessage: 'No tasks available.' },
-  );
+  updateChartLegend(elements.chartTaskStatusLegend, usable, {
+    emptyMessage: state.commandError || 'Run the agents to populate the unified queue.',
+  });
   if (elements.chartTaskNote) {
     const base = 'Breakdown of unified queue by live status';
-    elements.chartTaskNote.textContent = counts.sla > 0 ? `${base} • SLA breaches: ${counts.sla}.` : `${base}.`;
+    elements.chartTaskNote.textContent =
+      slaBreaches > 0 ? `${base} • SLA breaches: ${slaBreaches}.` : `${base}.`;
   }
 }
 
@@ -2003,58 +2187,29 @@ function renderFinanceInsights() {
   if (!elements.chartFinance) {
     return;
   }
-  const finance = state.data?.finance;
-  const snapshotArray = Array.isArray(finance?.latest_snapshot)
-    ? finance.latest_snapshot
-    : finance?.latest_snapshot
-    ? [finance.latest_snapshot]
-    : [];
-  const snapshot = snapshotArray[0];
-  if (!snapshot) {
-    toggleChartState(elements.chartFinance, elements.chartFinanceEmpty, false);
-    updateChartLegend(elements.chartFinanceLegend, [], {
-      emptyMessage: 'Run the finance agent to track savings and cash.',
-    });
-    if (elements.chartFinanceNote) {
-      elements.chartFinanceNote.textContent =
-        'Cash bars scaled in $K; DSO improvement measured off the 45 day baseline.';
-    }
-    return;
-  }
-  const laborMinutes = parseNumericValue(snapshot.labor_minutes_saved);
-  const laborHours = laborMinutes / 60;
-  const cash = parseNumericValue(snapshot.projected_cash_recovered);
-  const dsoCurrent = parseNumericValue(snapshot.dso);
-  const dsoImprovement = Math.max(FINANCE_DSO_BASELINE - dsoCurrent, 0);
-  const dataset = [
-    {
-      label: 'Labor hrs saved',
-      value: laborHours,
-      displayValue: `${laborHours.toFixed(1)} hrs`,
-      color: CHART_COLORS[0],
-    },
-    {
-      label: 'Projected cash ($K)',
-      value: cash / 1000,
-      displayValue: usdFormatter.format(cash),
-      color: CHART_COLORS[1],
-    },
-    {
-      label: 'DSO improvement',
-      value: dsoImprovement,
-      displayValue: `${dsoImprovement.toFixed(1)} days`,
-      color: CHART_COLORS[2],
-    },
-  ].filter((item) => Number.isFinite(item.value));
+  const insight = getCommandFinanceInsights();
+  const dataset = Array.isArray(insight?.dataset) ? insight.dataset.filter((item) => Number.isFinite(item?.value)) : [];
   const hasData = dataset.some((item) => item.value > 0);
+  const baseline = insight?.meta?.baselineDso ?? FINANCE_DSO_BASELINE;
+  const snapshot = insight?.meta?.snapshotDate || null;
+
+  if (elements.chartFinanceHeadline) {
+    elements.chartFinanceHeadline.textContent = hasData ? 'Savings snapshot' : 'No measurable impact yet';
+  }
+
   toggleChartState(elements.chartFinance, elements.chartFinanceEmpty, hasData);
   if (!hasData) {
+    if (elements.chartFinanceEmpty) {
+      elements.chartFinanceEmpty.textContent =
+        state.commandError || 'Run the finance agent to populate ROI metrics.';
+    }
     updateChartLegend(elements.chartFinanceLegend, [], {
-      emptyMessage: 'Finance run produced no measurable changes yet.',
+      emptyMessage: state.commandError || 'Finance run produced no measurable changes yet.',
     });
     if (elements.chartFinanceNote) {
-      elements.chartFinanceNote.textContent =
-        'Cash bars scaled in $K; DSO improvement measured off the 45 day baseline.';
+      elements.chartFinanceNote.textContent = state.commandError
+        ? state.commandError
+        : `DSO baseline ${baseline} days.`;
     }
     return;
   }
@@ -2067,11 +2222,17 @@ function renderFinanceInsights() {
     axisSteps: 4,
   });
   updateChartLegend(elements.chartFinanceLegend, dataset, {
-    emptyMessage: 'Finance run produced no measurable changes yet.',
+    emptyMessage: state.commandError || 'Finance run produced no measurable changes yet.',
   });
   if (elements.chartFinanceNote) {
-    const base = 'Cash bars scaled in $K; DSO improvement measured off the 45 day baseline';
-    elements.chartFinanceNote.textContent = snapshot.date ? `${base}. As of ${snapshot.date}.` : `${base}.`;
+    if (snapshot) {
+      const parsed = new Date(snapshot);
+      elements.chartFinanceNote.textContent = Number.isNaN(parsed.getTime())
+        ? `DSO baseline ${baseline} days.`
+        : `As of ${parsed.toLocaleDateString()}`;
+    } else {
+      elements.chartFinanceNote.textContent = `DSO baseline ${baseline} days.`;
+    }
   }
 }
 
@@ -2085,22 +2246,36 @@ function renderInventoryInsights() {
     return;
   }
 
-  const entries = Array.isArray(state.inventoryForecast) ? state.inventoryForecast : [];
-  const counts = computeInventoryActionCounts(entries);
-  const dataset = buildInventoryDataset(counts);
-  const usable = dataset.filter((item) => item.value > 0);
-  const hasData = usable.length > 0;
+  const insight = getCommandInventoryInsights();
+  const dataset = Array.isArray(insight?.dataset) ? insight.dataset.filter((item) => Number(item?.value) > 0) : [];
+  const hasData = dataset.length > 0;
+  const totalSkus = Number(insight?.totalSkus ?? 0);
+  const scenarioAvailable = Boolean(insight?.scenarioAvailable);
+
+  if (elements.chartInventoryHeadline) {
+    elements.chartInventoryHeadline.textContent = hasData ? 'Prioritized SKU guidance' : 'Inventory steady';
+  }
+  if (elements.chartInventoryBadge) {
+    elements.chartInventoryBadge.hidden = !scenarioAvailable;
+  }
+
   toggleChartState(elements.chartInventoryActions, elements.chartInventoryEmpty, hasData);
   if (!hasData) {
+    if (elements.chartInventoryEmpty) {
+      elements.chartInventoryEmpty.textContent =
+        state.commandError || 'No active recommendations. Run the ordering agent to refresh.';
+    }
     updateChartLegend(elements.chartInventoryLegend, [], {
-      emptyMessage: 'No inventory forecast data available.',
+      emptyMessage: state.commandError || 'No inventory forecast data available.',
     });
     if (elements.chartInventoryNote) {
-      elements.chartInventoryNote.textContent = 'Count of SKUs flagged for reorder, watch lists, or healthy buffers.';
+      elements.chartInventoryNote.textContent = state.commandError
+        ? state.commandError
+        : 'Run the ordering agent to refresh inventory insights.';
     }
     return;
   }
-  drawHorizontalBarChart(elements.chartInventoryActions, usable, {
+  drawHorizontalBarChart(elements.chartInventoryActions, dataset, {
     paddingLeft: 160,
     paddingRight: 28,
     paddingTop: 32,
@@ -2108,11 +2283,11 @@ function renderInventoryInsights() {
     barGap: 18,
     axisSteps: 3,
   });
-  updateChartLegend(elements.chartInventoryLegend, usable, {
-    emptyMessage: 'No inventory forecast data available.',
+  updateChartLegend(elements.chartInventoryLegend, dataset, {
+    emptyMessage: state.commandError || 'No inventory forecast data available.',
   });
   if (elements.chartInventoryNote) {
-    elements.chartInventoryNote.textContent = `Count of SKUs flagged for reorder, watch lists, or healthy buffers. Tracking ${entries.length} SKUs.`;
+    elements.chartInventoryNote.textContent = `Tracking ${totalSkus.toLocaleString()} SKU${totalSkus === 1 ? '' : 's'} across the forecast.`;
   }
 }
 
@@ -2149,6 +2324,13 @@ function buildInventoryDataset(counts, { prefix } = {}) {
 }
 
 function renderScenarioInventoryInsights(scenario) {
+  if (elements.chartInventoryHeadline) {
+    elements.chartInventoryHeadline.textContent = 'Scenario comparison';
+  }
+  if (elements.chartInventoryBadge) {
+    elements.chartInventoryBadge.textContent = 'Scenario ready';
+    elements.chartInventoryBadge.hidden = false;
+  }
   const baselineEntries = Object.entries(scenario.baseline || {}).map(([sku, detail]) => ({
     supply_sku: sku,
     ...(detail || {}),
@@ -2219,7 +2401,7 @@ function renderScenarioInventoryInsights(scenario) {
   if (elements.chartInventoryNote) {
     const growth = Number(scenario.growth_percent ?? state.inventoryScenarioInputs.growthPercent ?? 0);
     const leadDelta = Number(scenario.lead_time_delta ?? state.inventoryScenarioInputs.leadTimeDelta ?? 0);
-  const applied = Number(scenario.lead_time_applied ?? INVENTORY_BASE_LEAD_TIME + leadDelta);
+    const applied = Number(scenario.lead_time_applied ?? INVENTORY_BASE_LEAD_TIME + leadDelta);
     const tracked = Array.isArray(scenario.skus) && scenario.skus.length ? scenario.skus.length : scenarioEntries.length;
     const pieces = [];
     pieces.push(`Baseline vs scenario mix (growth ${growth}%, lead ${leadDelta >= 0 ? '+' : ''}${leadDelta}d → ${applied}d)`);
@@ -3554,6 +3736,7 @@ async function refreshStatus({ silent = true } = {}) {
     renderStatusRows(Array.isArray(statuses) ? statuses : []);
     await refreshSnapshot({ silent: true });
     await refreshTasks({ silent: true });
+    await refreshCommandInsights({ silent: true });
   } catch (error) {
     if (!silent) {
       handleApiError(error);
@@ -3604,6 +3787,36 @@ async function refreshTasks({ silent = false } = {}) {
     if (!silent) {
       handleApiError(error);
     }
+  }
+}
+
+async function refreshCommandInsights({ silent = true } = {}) {
+  if (!state.apiBase) {
+    state.commandInsights = computeCommandInsightsFallback();
+    state.commandError = 'API base URL is not configured.';
+    renderTaskInsights();
+    renderFinanceInsights();
+    renderInventoryInsights();
+    return;
+  }
+  try {
+    const payload = await callApi('/api/command/insights', { method: 'GET', silent });
+    if (payload && typeof payload === 'object') {
+      state.commandInsights = normalizeCommandInsights(payload);
+      state.commandError = null;
+    }
+  } catch (error) {
+    state.commandError = error?.message || 'Unable to load automation insights.';
+    state.commandInsights = computeCommandInsightsFallback();
+    if (!silent) {
+      handleApiError(error);
+      return;
+    }
+    console.warn('Failed to refresh command insights', error);
+  } finally {
+    renderTaskInsights();
+    renderFinanceInsights();
+    renderInventoryInsights();
   }
 }
 

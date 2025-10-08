@@ -149,25 +149,87 @@
         </header>
         <div class="grid insights-grid">
           <div class="chart-card">
-            <h3>Task Load</h3>
-            <canvas id="chart-task-status" class="chart-canvas" height="220" role="img" aria-label="Task status distribution"></canvas>
-            <p id="chart-task-status-empty" class="chart-empty">Run the task loader to see active work.</p>
-            <ul id="chart-task-status-legend" class="chart-legend"></ul>
-            <p id="chart-task-note" class="chart-note">Breakdown of unified queue by live status.</p>
+            <header class="chart-card-header">
+              <p class="chart-card-eyebrow">Unified queue</p>
+              <div class="chart-card-headline-row">
+                <h3 class="chart-card-headline" id="chart-task-headline">No active tasks</h3>
+                <span id="chart-task-badge" class="chart-card-badge" hidden>—</span>
+              </div>
+              <p class="chart-card-subtitle">
+                Live workload distribution across open, in-progress, and closed efforts.
+              </p>
+            </header>
+            <div class="chart-card-body">
+              <canvas
+                id="chart-task-status"
+                class="chart-canvas"
+                height="220"
+                role="img"
+                aria-label="Task status distribution"
+              ></canvas>
+              <p id="chart-task-status-empty" class="chart-empty">
+                Run the agents to populate the unified queue.
+              </p>
+            </div>
+            <ul id="chart-task-status-legend" class="chart-card-list chart-legend"></ul>
+            <p id="chart-task-note" class="chart-card-meta">
+              Breakdown of unified queue by live status.
+            </p>
           </div>
           <div class="chart-card">
-            <h3>Finance Pulse</h3>
-            <canvas id="chart-finance" class="chart-canvas" height="220" role="img" aria-label="Financial impact summary"></canvas>
-            <p id="chart-finance-empty" class="chart-empty">Run the finance agent to track savings and cash.</p>
-            <ul id="chart-finance-legend" class="chart-legend"></ul>
-            <p id="chart-finance-note" class="chart-note">Cash bars scaled in $K; DSO improvement measured off the 45&nbsp;day baseline.</p>
+            <header class="chart-card-header">
+              <p class="chart-card-eyebrow">Finance pulse</p>
+              <div class="chart-card-headline-row">
+                <h3 class="chart-card-headline" id="chart-finance-headline">No measurable impact yet</h3>
+              </div>
+              <p class="chart-card-subtitle">
+                Tracking reclaimed labor, projected cash, and days sales outstanding improvements.
+              </p>
+            </header>
+            <div class="chart-card-body">
+              <canvas
+                id="chart-finance"
+                class="chart-canvas"
+                height="220"
+                role="img"
+                aria-label="Financial impact summary"
+              ></canvas>
+              <p id="chart-finance-empty" class="chart-empty">
+                Run the finance agent to populate ROI metrics.
+              </p>
+            </div>
+            <ul id="chart-finance-legend" class="chart-card-list chart-legend"></ul>
+            <p id="chart-finance-note" class="chart-card-meta">
+              DSO baseline 45 days.
+            </p>
           </div>
           <div class="chart-card">
-            <h3>Inventory Actions</h3>
-            <canvas id="chart-inventory-actions" class="chart-canvas" height="220" role="img" aria-label="Inventory action mix"></canvas>
-            <p id="chart-inventory-empty" class="chart-empty">Run ordering or scenario planning to populate inventory pressure.</p>
-            <ul id="chart-inventory-legend" class="chart-legend"></ul>
-            <p id="chart-inventory-note" class="chart-note">Count of SKUs flagged for reorder, watch lists, or healthy buffers.</p>
+            <header class="chart-card-header">
+              <p class="chart-card-eyebrow">Inventory actions</p>
+              <div class="chart-card-headline-row">
+                <h3 class="chart-card-headline" id="chart-inventory-headline">Inventory steady</h3>
+                <span id="chart-inventory-badge" class="chart-card-badge" hidden>Scenario ready</span>
+              </div>
+              <p class="chart-card-subtitle">
+                Highlights SKUs with reorder urgency, watch lists, and healthy buffers.
+              </p>
+            </header>
+            <div class="chart-card-body">
+              <canvas
+                id="chart-inventory-actions"
+                class="chart-canvas"
+                height="220"
+                role="img"
+                aria-label="Inventory action mix"
+              ></canvas>
+              <p id="chart-inventory-empty" class="chart-empty">
+                No active recommendations. Run the ordering agent to refresh.
+              </p>
+            </div>
+            <ul id="chart-inventory-legend" class="chart-card-list chart-legend"></ul>
+            <p id="chart-inventory-note" class="chart-card-meta">
+              Count of SKUs flagged for reorder, watch lists, or healthy buffers.
+            </p>
           </div>
         </div>
       </section>
