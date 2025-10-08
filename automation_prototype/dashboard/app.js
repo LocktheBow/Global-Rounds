@@ -8,7 +8,7 @@ const savedApiBase = (() => {
 })();
 
 const defaultApiBase =
-  document.body.dataset.apiBase?.trim() || savedApiBase || 'http://localhost:8001';
+  document.body.dataset.apiBase?.trim() || savedApiBase || window.location.origin;
 
 const state = {
   data: null,
