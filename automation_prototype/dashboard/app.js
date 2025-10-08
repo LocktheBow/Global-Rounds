@@ -7,8 +7,14 @@ const savedApiBase = (() => {
   }
 })();
 
+const runtimeOrigin = window.location.origin || '';
+const datasetApiBase = document.body.dataset.apiBase?.trim() || '';
+const cleanedSavedBase = savedApiBase && !savedApiBase.includes('localhost') ? savedApiBase : '';
 const defaultApiBase =
-  document.body.dataset.apiBase?.trim() || savedApiBase || window.location.origin;
+  datasetApiBase ||
+  (runtimeOrigin && !runtimeOrigin.includes('localhost') ? runtimeOrigin : '') ||
+  cleanedSavedBase ||
+  'http://localhost:8001';
 
 const state = {
   data: null,
@@ -52,6 +58,14 @@ const state = {
     skus: '',
   },
 };
+
+try {
+  if (state.apiBase && state.apiBase !== savedApiBase) {
+    window.localStorage.setItem('gr-api-base', state.apiBase);
+  }
+} catch (error) {
+  console.warn('Unable to persist API base preference.', error);
+}
 
 const elements = {
   status: document.getElementById('data-status'),

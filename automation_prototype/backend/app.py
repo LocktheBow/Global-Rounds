@@ -150,6 +150,9 @@ if PATIENT_STATIC_DIR.exists():
         name="patient",
     )
 
+if DEFAULT_DATA_DIR.exists():
+    app.mount("/data", StaticFiles(directory=DEFAULT_DATA_DIR), name="data")
+
 orchestrator = AgentOrchestrator(data_dir=DEFAULT_DATA_DIR)
 portal_store = PortalOrderStore(data_dir=DEFAULT_DATA_DIR)
 task_store = TaskStore(data_dir=DEFAULT_DATA_DIR)
