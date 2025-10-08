@@ -1,0 +1,14 @@
+{
+  "database": {
+    "url": "postgresql+asyncpg://automation:automation@localhost:5432/automation",
+    "migration_table": "schema_history"
+  },
+  "event_broker": {
+    "provider": "redis",
+    "url": "redis://localhost:6379/0"
+  },
+  "task_worker": {
+    "provider": "dramatiq",
+    "concurrency": 4
+  }
+}
