@@ -1,6 +1,7 @@
 const savedApiBase = (() => {
   try {
-    return window.localStorage.getItem('gr-api-base') || '';
+    const value = window.localStorage.getItem('gr-api-base') || '';
+    return value.includes('localhost') ? '' : value;
   } catch (error) {
     console.warn('Unable to access localStorage for API base persistence.', error);
     return '';
@@ -9,7 +10,7 @@ const savedApiBase = (() => {
 
 const runtimeOrigin = window.location.origin || '';
 const datasetApiBase = document.body.dataset.apiBase?.trim() || '';
-const cleanedSavedBase = savedApiBase && !savedApiBase.includes('localhost') ? savedApiBase : '';
+const cleanedSavedBase = savedApiBase;
 const defaultApiBase =
   datasetApiBase ||
   (runtimeOrigin && !runtimeOrigin.includes('localhost') ? runtimeOrigin : '') ||
