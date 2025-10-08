@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: global-rounds-automation
+    env: python
+    rootDir: .
+    buildCommand: pip install -r automation_prototype/backend/requirements.txt
+    startCommand: PYTHONPATH=automation_prototype uvicorn backend.app:app --host 0.0.0.0 --port 10000
+    pythonVersion: 3.11.9
+    envVars:
+      - key: ANTHROPIC_API_KEY
+        sync: false
