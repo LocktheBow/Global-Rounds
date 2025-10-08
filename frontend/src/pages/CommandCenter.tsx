@@ -1,14 +1,20 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { RevenueByCategory } from '../components/dashboards/RevenueByCategory';
 import { SupplierReliability } from '../components/dashboards/SupplierReliability';
+import { TaskLoadCard, FinancePulseCard, InventoryActionsCard } from '../components/command';
 import { useCommandFilters, buildFilterQuery } from '../state/filters';
 import { AnalyticsSummaryResponse } from '../utils/calc';
+import { fetchCommandInsights } from '../api/command';
+import type { CommandInsightsResponse } from '../types/command';
 
 export const CommandCenter = () => {
   const { filters, setFilters, resetFilters } = useCommandFilters();
   const [summary, setSummary] = useState<AnalyticsSummaryResponse | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [commandInsights, setCommandInsights] = useState<CommandInsightsResponse | null>(null);
+  const [commandLoading, setCommandLoading] = useState(false);
+  const [commandError, setCommandError] = useState<string | null>(null);
   const apiBase = useMemo(() => {
     const base = import.meta.env.VITE_API_BASE_URL ?? '';
     return base.endsWith('/') ? base.slice(0, -1) : base;
@@ -45,6 +51,34 @@ export const CommandCenter = () => {
     loadSummary();
     return () => controller.abort();
   }, [apiBase, filters]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadCommandInsights = async () => {
+      setCommandLoading(true);
+      setCommandError(null);
+      try {
+        const data = await fetchCommandInsights(apiBase);
+        if (!cancelled) {
+          setCommandInsights(data);
+        }
+      } catch (cause) {
+        if (!cancelled) {
+          setCommandError((cause as Error).message ?? 'Unable to load automation insights.');
+        }
+      } finally {
+        if (!cancelled) {
+          setCommandLoading(false);
+        }
+      }
+    };
+
+    loadCommandInsights();
+    return () => {
+      cancelled = true;
+    };
+  }, [apiBase]);
 
   const handleRangeChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = event.target;
@@ -238,6 +272,34 @@ export const CommandCenter = () => {
             />
           </div>
         </div>
+
+        <section className="mt-8">
+          <div className="mb-4 flex items-center justify-between">
+            <div>
+              <h2 className="text-lg font-semibold text-slate-100">Automation Insights</h2>
+              <p className="text-sm text-slate-400">
+                Live queue, finance savings, and inventory guidance from the agent suite.
+              </p>
+            </div>
+          </div>
+          <div className="grid gap-6 lg:grid-cols-3">
+            <TaskLoadCard
+              insight={commandInsights?.tasks ?? null}
+              loading={commandLoading}
+              error={commandError}
+            />
+            <FinancePulseCard
+              insight={commandInsights?.finance ?? null}
+              loading={commandLoading}
+              error={commandError}
+            />
+            <InventoryActionsCard
+              insight={commandInsights?.inventory ?? null}
+              loading={commandLoading}
+              error={commandError}
+            />
+          </div>
+        </section>
       </main>
     </div>
   );
