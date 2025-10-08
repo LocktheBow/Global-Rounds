@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: global-rounds-automation
+    env: docker
+    rootDir: automation_prototype/backend
+    dockerfilePath: Dockerfile
+    envVars:
+      - key: ANTHROPIC_API_KEY
+        sync: false
