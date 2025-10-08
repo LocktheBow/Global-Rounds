@@ -1,0 +1,46 @@
+# ---------------------
+# Node / pnpm artefacts
+# ---------------------
+node_modules/
+.pnpm-store/
+pnpm-debug.log*
+*.log
+.npmrc
+
+# ---------------------
+# Build output
+# ---------------------
+dist/
+frontend/dist/
+backend/dist/
+*.tsbuildinfo
+
+# ---------------------
+# Environment files
+# ---------------------
+.env
+.env.*
+!*.env.example
+frontend/.env*
+backend/.env*
+
+# Generated seed data (recreated via `pnpm seed`)
+backend/src/db/seed.json
+
+# ---------------------
+# Tooling / IDE
+# ---------------------
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# ---------------------
+# Python artefacts (automation prototype etc.)
+# ---------------------
+.venv/
+automation_prototype/
+**/__pycache__/
+*.py[cod]

@@ -1,0 +1,15 @@
+{
+  "name": "global-rounds",
+  "private": true,
+  "version": "0.1.0",
+  "scripts": {
+    "dev": "concurrently \"pnpm --filter backend dev\" \"pnpm --filter frontend dev\"",
+    "build": "pnpm -r build",
+    "test": "pnpm -r test",
+    "seed": "node scripts/seed.js"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "typescript": "^5.4.5"
+  }
+}
