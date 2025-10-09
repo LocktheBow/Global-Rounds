@@ -356,6 +356,17 @@ input[type='range'] {
   gap: 0.65rem;
 }
 
+.insight-react-fallback ul {
+  margin: 0;
+  padding-left: 1.1rem;
+  color: rgba(11, 31, 77, 0.7);
+  font-size: 0.82rem;
+}
+
+.insight-react-fallback li strong {
+  color: var(--text-primary);
+}
+
 .insight-react-eyebrow {
   margin: 0;
   font-size: 0.74rem;

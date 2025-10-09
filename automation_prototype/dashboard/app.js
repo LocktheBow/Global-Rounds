@@ -853,6 +853,40 @@ function setInsightFallback(container, { headline, copy }) {
   }
 }
 
+function renderInsightFallback(container, { eyebrow, headline, copy, items }) {
+  if (!container) {
+    return;
+  }
+  container.classList.remove('react-mounted');
+  const fallback = container.querySelector('.insight-react-fallback');
+  if (!fallback) {
+    return;
+  }
+  const eyebrowEl = fallback.querySelector('.insight-react-eyebrow');
+  if (eyebrowEl && typeof eyebrow === 'string') {
+    eyebrowEl.textContent = eyebrow;
+  }
+  const headlineEl = fallback.querySelector('.insight-react-headline');
+  if (headlineEl && typeof headline === 'string') {
+    headlineEl.textContent = headline;
+  }
+  const copyEl = fallback.querySelector('.insight-react-copy');
+  if (copyEl && typeof copy === 'string') {
+    copyEl.textContent = copy;
+  }
+  let list = fallback.querySelector('ul');
+  if (!list) {
+    list = document.createElement('ul');
+    fallback.appendChild(list);
+  }
+  list.innerHTML = '';
+  (items || []).forEach((item) => {
+    const li = document.createElement('li');
+    li.innerHTML = item;
+    list.appendChild(li);
+  });
+}
+
 function prepareCanvas(canvas) {
   if (!canvas) {
     return null;
@@ -2195,16 +2229,26 @@ function renderTaskInsights() {
     return;
   }
 
-  container.classList.remove('react-mounted');
   const total = Number(insight?.total ?? 0);
   const fallbackHeadline = total > 0 ? `${total.toLocaleString()} tasks` : 'No active tasks';
   const fallbackCopy = state.commandError
     || (total > 0
       ? 'Unified queue snapshot available. React renderer not loaded yet.'
       : 'Run the agents to populate the unified queue.');
-  setInsightFallback(container, {
+  const breakdown = Array.isArray(insight?.dataset)
+    ? insight.dataset.map((segment) => {
+        const value = Number(segment?.value ?? 0);
+        return `<strong>${escapeHtml(segment?.label || '')}:</strong> ${value.toLocaleString()} tasks`;
+      })
+    : [];
+  if (insight?.slaBreaches) {
+    breakdown.unshift(`<strong>SLA breaches:</strong> ${Number(insight.slaBreaches).toLocaleString()}`);
+  }
+  renderInsightFallback(container, {
+    eyebrow: 'Unified queue',
     headline: fallbackHeadline,
     copy: fallbackCopy,
+    items: breakdown,
   });
 }
 
@@ -2236,9 +2280,18 @@ function renderFinanceInsights() {
     || (snapshot
       ? `As of ${new Date(snapshot).toLocaleDateString()} • DSO baseline ${baseline} days.`
       : `DSO baseline ${baseline} days.`);
-  setInsightFallback(container, {
+  const metrics = Array.isArray(insight?.dataset)
+    ? insight.dataset.map((segment) => {
+        const value = Number(segment?.value ?? 0);
+        const label = segment?.displayValue || formatChartNumber(value);
+        return `<strong>${escapeHtml(segment?.label || '')}:</strong> ${escapeHtml(String(label))}`;
+      })
+    : [];
+  renderInsightFallback(container, {
+    eyebrow: 'Finance pulse',
     headline,
     copy,
+    items: metrics,
   });
 }
 
@@ -2269,9 +2322,17 @@ function renderInventoryInsights() {
       : totalSkus > 0
         ? `Tracking ${totalSkus.toLocaleString()} SKU${totalSkus === 1 ? '' : 's'} across the forecast.`
         : 'No active recommendations. Run the ordering agent to refresh.');
-  setInsightFallback(container, {
+  const metrics = Array.isArray(baseInsight?.dataset)
+    ? baseInsight.dataset.map((segment) => {
+        const value = Number(segment?.value ?? 0);
+        return `<strong>${escapeHtml(segment?.label || '')}:</strong> ${value.toLocaleString()} SKUs`;
+      })
+    : [];
+  renderInsightFallback(container, {
+    eyebrow: 'Inventory actions',
     headline,
     copy,
+    items: metrics,
   });
 }
 
