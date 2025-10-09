@@ -12,9 +12,9 @@ export type AutomationAgent = (typeof AUTOMATION_AGENTS)[number];
 
 type Primitive = string | number | boolean | null;
 
-type JsonValue = Primitive | JsonValue[] | { [key: string]: JsonValue };
+type JsonValue = Primitive | JsonValue[] | { [key: string]: JsonValue | undefined };
 
-type JsonObject = Record<string, JsonValue>;
+type JsonObject = { [key: string]: JsonValue | undefined };
 
 interface DashboardData {
   ordering?: JsonValue;
