@@ -1019,6 +1019,9 @@ input[type='range'] {
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.65);
   overflow-x: auto;
 }
+.card-block table {
+  min-width: 640px;
+}
 
 .card-block h3 {
   margin-top: 0;
