@@ -112,6 +112,7 @@ declare global {
 }
 
 window.CommandInsightsEmbed = api;
+window.dispatchEvent(new CustomEvent('command-insights-ready'));
 
 export type { CommandInsightsResponse };
 export { api as CommandInsightsEmbed };

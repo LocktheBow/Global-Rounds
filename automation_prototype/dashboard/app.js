@@ -4116,6 +4116,9 @@ loadSample();
 startStatusPolling();
 refreshStatus({ silent: true });
 loadInventoryForecast({ silent: true });
+window.addEventListener('command-insights-ready', () => {
+  renderInsights();
+});
 function handleScenarioCsvExport() {
   const scenario = state.inventoryScenarioResult;
   if (!scenario) {
