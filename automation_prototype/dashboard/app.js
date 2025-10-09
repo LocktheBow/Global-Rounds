@@ -2237,7 +2237,7 @@ function renderTaskInsights() {
   const fallbackHeadline = total > 0 ? `${total.toLocaleString()} tasks` : 'No active tasks';
   const fallbackCopy = state.commandError
     || (total > 0
-      ? 'Unified queue snapshot available. React renderer not loaded yet.'
+      ? 'Unified queue snapshot available.'
       : 'Run the agents to populate the unified queue.');
   const breakdown = Array.isArray(insight?.dataset)
     ? insight.dataset.map((segment) => {
@@ -2330,7 +2330,7 @@ function renderInventoryInsights() {
   const headline = totalSkus > 0 ? 'Prioritized SKU guidance' : 'Inventory steady';
   const copy = state.commandError
     || (scenario
-      ? 'Scenario projections ready. React renderer not loaded yet.'
+      ? 'Scenario projections ready.'
       : totalSkus > 0
         ? `Tracking ${totalSkus.toLocaleString()} SKU${totalSkus === 1 ? '' : 's'} across the forecast.`
         : 'No active recommendations. Run the ordering agent to refresh.');
