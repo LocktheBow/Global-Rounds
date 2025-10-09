@@ -2219,6 +2219,7 @@ function renderTaskInsights() {
   }
   const embed = getEmbedApi();
   const insight = getCommandTaskInsights();
+  let reactMounted = false;
   if (embed?.renderTaskCard) {
     try {
       embed.renderTaskCard(container, {
@@ -2227,7 +2228,7 @@ function renderTaskInsights() {
         error: state.commandError,
       });
       container.classList.add('react-mounted');
-      return;
+      reactMounted = true;
     } catch (error) {
       console.error('Failed to render React task card', error);
     }
@@ -2248,12 +2249,15 @@ function renderTaskInsights() {
   if (insight?.slaBreaches) {
     breakdown.unshift(`<strong>SLA breaches:</strong> ${Number(insight.slaBreaches).toLocaleString()}`);
   }
-  renderInsightFallback(container, {
-    eyebrow: 'Unified queue',
-    headline: fallbackHeadline,
-    copy: fallbackCopy,
-    items: breakdown,
-  });
+  if (!reactMounted) {
+    container.classList.remove('react-mounted');
+    renderInsightFallback(container, {
+      eyebrow: 'Unified queue',
+      headline: fallbackHeadline,
+      copy: fallbackCopy,
+      items: breakdown,
+    });
+  }
 }
 
 function renderFinanceInsights() {
@@ -2263,6 +2267,7 @@ function renderFinanceInsights() {
   }
   const embed = getEmbedApi();
   const insight = getCommandFinanceInsights();
+  let reactMounted = false;
   if (embed?.renderFinanceCard) {
     try {
       embed.renderFinanceCard(container, {
@@ -2271,13 +2276,15 @@ function renderFinanceInsights() {
         error: state.commandError,
       });
       container.classList.add('react-mounted');
-      return;
+      reactMounted = true;
     } catch (error) {
       console.error('Failed to render React finance card', error);
     }
   }
 
-  container.classList.remove('react-mounted');
+  if (!reactMounted) {
+    container.classList.remove('react-mounted');
+  }
   const baseline = insight?.meta?.baselineDso ?? FINANCE_DSO_BASELINE;
   const snapshot = insight?.meta?.snapshotDate || null;
   const segmentTotal = Array.isArray(insight?.dataset)
@@ -2295,12 +2302,14 @@ function renderFinanceInsights() {
         return `<strong>${escapeHtml(segment?.label || '')}:</strong> ${escapeHtml(String(label))}`;
       })
     : [];
-  renderInsightFallback(container, {
-    eyebrow: 'Finance pulse',
-    headline,
-    copy,
-    items: metrics,
-  });
+  if (!reactMounted) {
+    renderInsightFallback(container, {
+      eyebrow: 'Finance pulse',
+      headline,
+      copy,
+      items: metrics,
+    });
+  }
 }
 
 function renderInventoryInsights() {
@@ -2311,6 +2320,7 @@ function renderInventoryInsights() {
   const scenario = state.inventoryScenarioResult;
   const baseInsight = scenario ? buildScenarioInventoryInsight(scenario) : getCommandInventoryInsights();
   const embed = getEmbedApi();
+  let reactMounted = false;
   if (embed?.renderInventoryCard) {
     try {
       embed.renderInventoryCard(container, {
@@ -2319,7 +2329,7 @@ function renderInventoryInsights() {
         error: state.commandError,
       });
       container.classList.add('react-mounted');
-      return;
+      reactMounted = true;
     } catch (error) {
       console.error('Failed to render React inventory card', error);
     }
@@ -2340,12 +2350,15 @@ function renderInventoryInsights() {
         return `<strong>${escapeHtml(segment?.label || '')}:</strong> ${value.toLocaleString()} SKUs`;
       })
     : [];
-  renderInsightFallback(container, {
-    eyebrow: 'Inventory actions',
-    headline,
-    copy,
-    items: metrics,
-  });
+  if (!reactMounted) {
+    container.classList.remove('react-mounted');
+    renderInsightFallback(container, {
+      eyebrow: 'Inventory actions',
+      headline,
+      copy,
+      items: metrics,
+    });
+  }
 }
 
 function computeInventoryActionCounts(entries) {
