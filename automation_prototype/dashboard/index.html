@@ -148,88 +148,32 @@
           <p class="panel-subtitle">Quick visuals to spot workload, ROI, and inventory pressure without sifting through tables.</p>
         </header>
         <div class="grid insights-grid">
-          <div class="chart-card">
-            <header class="chart-card-header">
-              <p class="chart-card-eyebrow">Unified queue</p>
-              <div class="chart-card-headline-row">
-                <h3 class="chart-card-headline" id="chart-task-headline">No active tasks</h3>
-                <span id="chart-task-badge" class="chart-card-badge" hidden>—</span>
-              </div>
-              <p class="chart-card-subtitle">
+          <div class="chart-card react-insight-card" id="react-task-card">
+            <div class="insight-react-fallback" aria-live="polite">
+              <p class="insight-react-eyebrow">Unified queue</p>
+              <h3 class="insight-react-headline">Loading task insights…</h3>
+              <p class="insight-react-copy">
                 Live workload distribution across open, in-progress, and closed efforts.
               </p>
-            </header>
-            <div class="chart-card-body">
-              <canvas
-                id="chart-task-status"
-                class="chart-canvas"
-                height="220"
-                role="img"
-                aria-label="Task status distribution"
-              ></canvas>
-              <p id="chart-task-status-empty" class="chart-empty">
-                Run the agents to populate the unified queue.
-              </p>
             </div>
-            <ul id="chart-task-status-legend" class="chart-card-list chart-legend"></ul>
-            <p id="chart-task-note" class="chart-card-meta">
-              Breakdown of unified queue by live status.
-            </p>
           </div>
-          <div class="chart-card">
-            <header class="chart-card-header">
-              <p class="chart-card-eyebrow">Finance pulse</p>
-              <div class="chart-card-headline-row">
-                <h3 class="chart-card-headline" id="chart-finance-headline">No measurable impact yet</h3>
-              </div>
-              <p class="chart-card-subtitle">
+          <div class="chart-card react-insight-card" id="react-finance-card">
+            <div class="insight-react-fallback" aria-live="polite">
+              <p class="insight-react-eyebrow">Finance pulse</p>
+              <h3 class="insight-react-headline">Loading ROI metrics…</h3>
+              <p class="insight-react-copy">
                 Tracking reclaimed labor, projected cash, and days sales outstanding improvements.
               </p>
-            </header>
-            <div class="chart-card-body">
-              <canvas
-                id="chart-finance"
-                class="chart-canvas"
-                height="220"
-                role="img"
-                aria-label="Financial impact summary"
-              ></canvas>
-              <p id="chart-finance-empty" class="chart-empty">
-                Run the finance agent to populate ROI metrics.
-              </p>
             </div>
-            <ul id="chart-finance-legend" class="chart-card-list chart-legend"></ul>
-            <p id="chart-finance-note" class="chart-card-meta">
-              DSO baseline 45 days.
-            </p>
           </div>
-          <div class="chart-card">
-            <header class="chart-card-header">
-              <p class="chart-card-eyebrow">Inventory actions</p>
-              <div class="chart-card-headline-row">
-                <h3 class="chart-card-headline" id="chart-inventory-headline">Inventory steady</h3>
-                <span id="chart-inventory-badge" class="chart-card-badge" hidden>Scenario ready</span>
-              </div>
-              <p class="chart-card-subtitle">
+          <div class="chart-card react-insight-card" id="react-inventory-card">
+            <div class="insight-react-fallback" aria-live="polite">
+              <p class="insight-react-eyebrow">Inventory actions</p>
+              <h3 class="insight-react-headline">Loading inventory guidance…</h3>
+              <p class="insight-react-copy">
                 Highlights SKUs with reorder urgency, watch lists, and healthy buffers.
               </p>
-            </header>
-            <div class="chart-card-body">
-              <canvas
-                id="chart-inventory-actions"
-                class="chart-canvas"
-                height="220"
-                role="img"
-                aria-label="Inventory action mix"
-              ></canvas>
-              <p id="chart-inventory-empty" class="chart-empty">
-                No active recommendations. Run the ordering agent to refresh.
-              </p>
             </div>
-            <ul id="chart-inventory-legend" class="chart-card-list chart-legend"></ul>
-            <p id="chart-inventory-note" class="chart-card-meta">
-              Count of SKUs flagged for reorder, watch lists, or healthy buffers.
-            </p>
           </div>
         </div>
       </section>
@@ -584,6 +528,7 @@
 
   <div id="toast-stack" class="toast-stack" aria-live="polite" aria-atomic="true"></div>
 
+  <script defer src="assets/command-insights-embed.js?v=20251009a"></script>
   <script src="app.js?v=20251003c"></script>
 </body>
 </html>

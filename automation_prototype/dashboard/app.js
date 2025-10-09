@@ -60,6 +60,7 @@ const state = {
   },
   commandInsights: null,
   commandError: null,
+  commandLoading: false,
 };
 
 try {
@@ -105,23 +106,9 @@ const elements = {
   toastStack: document.getElementById('toast-stack'),
   taskTableBody: document.getElementById('task-table-body'),
   taskSummary: document.getElementById('task-summary'),
-  chartTaskStatus: document.getElementById('chart-task-status'),
-  chartTaskStatusEmpty: document.getElementById('chart-task-status-empty'),
-  chartTaskStatusLegend: document.getElementById('chart-task-status-legend'),
-  chartTaskHeadline: document.getElementById('chart-task-headline'),
-  chartTaskBadge: document.getElementById('chart-task-badge'),
-  chartFinance: document.getElementById('chart-finance'),
-  chartFinanceEmpty: document.getElementById('chart-finance-empty'),
-  chartFinanceLegend: document.getElementById('chart-finance-legend'),
-  chartFinanceHeadline: document.getElementById('chart-finance-headline'),
-  chartInventoryActions: document.getElementById('chart-inventory-actions'),
-  chartInventoryEmpty: document.getElementById('chart-inventory-empty'),
-  chartInventoryLegend: document.getElementById('chart-inventory-legend'),
-  chartInventoryHeadline: document.getElementById('chart-inventory-headline'),
-  chartInventoryBadge: document.getElementById('chart-inventory-badge'),
-  chartTaskNote: document.getElementById('chart-task-note'),
-  chartFinanceNote: document.getElementById('chart-finance-note'),
-  chartInventoryNote: document.getElementById('chart-inventory-note'),
+  reactTaskCard: document.getElementById('react-task-card'),
+  reactFinanceCard: document.getElementById('react-finance-card'),
+  reactInventoryCard: document.getElementById('react-inventory-card'),
   scenarioForm: document.getElementById('inventory-scenario-form'),
   scenarioGrowth: document.getElementById('scenario-growth'),
   scenarioLead: document.getElementById('scenario-lead'),
@@ -842,6 +829,28 @@ function updateChartLegend(element, items, { emptyMessage = 'No data yet.' } = {
       `;
     })
     .join('');
+}
+
+function getEmbedApi() {
+  return window.CommandInsightsEmbed || null;
+}
+
+function setInsightFallback(container, { headline, copy }) {
+  if (!container) {
+    return;
+  }
+  const fallback = container.querySelector('.insight-react-fallback');
+  if (!fallback) {
+    return;
+  }
+  const headlineEl = fallback.querySelector('.insight-react-headline');
+  if (headlineEl && typeof headline === 'string') {
+    headlineEl.textContent = headline;
+  }
+  const copyEl = fallback.querySelector('.insight-react-copy');
+  if (copyEl && typeof copy === 'string') {
+    copyEl.textContent = copy;
+  }
 }
 
 function prepareCanvas(canvas) {
@@ -2170,165 +2179,100 @@ function renderInsights() {
 }
 
 function renderTaskInsights() {
-  if (!elements.chartTaskStatus) {
+  const container = elements.reactTaskCard;
+  if (!container) {
     return;
   }
+  const embed = getEmbedApi();
   const insight = getCommandTaskInsights();
-  const dataset = Array.isArray(insight?.dataset) ? insight.dataset : [];
-  const total = Number(insight?.total ?? 0);
-  const slaBreaches = Number(insight?.slaBreaches ?? 0);
-  const usable = dataset.filter((item) => Number(item?.value) > 0);
-  const hasData = total > 0 && usable.length > 0;
-
-  if (elements.chartTaskHeadline) {
-    elements.chartTaskHeadline.textContent = hasData
-      ? `${total.toLocaleString()} tasks`
-      : 'No active tasks';
-  }
-  if (elements.chartTaskBadge) {
-    if (slaBreaches > 0) {
-      elements.chartTaskBadge.textContent = slaBreaches === 1 ? '1 SLA at risk' : `${slaBreaches} SLAs at risk`;
-      elements.chartTaskBadge.hidden = false;
-    } else {
-      elements.chartTaskBadge.hidden = true;
-    }
-  }
-  toggleChartState(elements.chartTaskStatus, elements.chartTaskStatusEmpty, hasData);
-  if (!hasData) {
-    if (elements.chartTaskStatusEmpty) {
-      elements.chartTaskStatusEmpty.textContent =
-        state.commandError || 'Run the agents to populate the unified queue.';
-    }
-    updateChartLegend(elements.chartTaskStatusLegend, [], {
-      emptyMessage: state.commandError || 'Run the agents to populate the unified queue.',
+  if (embed?.renderTaskCard) {
+    embed.renderTaskCard(container, {
+      insight,
+      loading: Boolean(state.commandLoading),
+      error: state.commandError,
     });
-    if (elements.chartTaskNote) {
-      elements.chartTaskNote.textContent = state.commandError
-        ? state.commandError
-        : 'Run the agents to populate the unified queue.';
-    }
+    container.classList.add('react-mounted');
     return;
   }
-  drawDonutChart(elements.chartTaskStatus, dataset, {
-    centerLabel: total.toLocaleString(),
-    centerSubLabel: 'tasks',
+
+  container.classList.remove('react-mounted');
+  const total = Number(insight?.total ?? 0);
+  const fallbackHeadline = total > 0 ? `${total.toLocaleString()} tasks` : 'No active tasks';
+  const fallbackCopy = state.commandError
+    || (total > 0
+      ? 'Unified queue snapshot available. React renderer not loaded yet.'
+      : 'Run the agents to populate the unified queue.');
+  setInsightFallback(container, {
+    headline: fallbackHeadline,
+    copy: fallbackCopy,
   });
-  updateChartLegend(elements.chartTaskStatusLegend, usable, {
-    emptyMessage: state.commandError || 'Run the agents to populate the unified queue.',
-  });
-  if (elements.chartTaskNote) {
-    const base = 'Breakdown of unified queue by live status';
-    elements.chartTaskNote.textContent =
-      slaBreaches > 0 ? `${base} • SLA breaches: ${slaBreaches}.` : `${base}.`;
-  }
 }
 
 function renderFinanceInsights() {
-  if (!elements.chartFinance) {
+  const container = elements.reactFinanceCard;
+  if (!container) {
     return;
   }
+  const embed = getEmbedApi();
   const insight = getCommandFinanceInsights();
-  const dataset = Array.isArray(insight?.dataset) ? insight.dataset.filter((item) => Number.isFinite(item?.value)) : [];
-  const hasData = dataset.some((item) => item.value > 0);
+  if (embed?.renderFinanceCard) {
+    embed.renderFinanceCard(container, {
+      insight,
+      loading: Boolean(state.commandLoading),
+      error: state.commandError,
+    });
+    container.classList.add('react-mounted');
+    return;
+  }
+
+  container.classList.remove('react-mounted');
   const baseline = insight?.meta?.baselineDso ?? FINANCE_DSO_BASELINE;
   const snapshot = insight?.meta?.snapshotDate || null;
-
-  if (elements.chartFinanceHeadline) {
-    elements.chartFinanceHeadline.textContent = hasData ? 'Savings snapshot' : 'No measurable impact yet';
-  }
-
-  toggleChartState(elements.chartFinance, elements.chartFinanceEmpty, hasData);
-  if (!hasData) {
-    if (elements.chartFinanceEmpty) {
-      elements.chartFinanceEmpty.textContent =
-        state.commandError || 'Run the finance agent to populate ROI metrics.';
-    }
-    updateChartLegend(elements.chartFinanceLegend, [], {
-      emptyMessage: state.commandError || 'Finance run produced no measurable changes yet.',
-    });
-    if (elements.chartFinanceNote) {
-      elements.chartFinanceNote.textContent = state.commandError
-        ? state.commandError
-        : `DSO baseline ${baseline} days.`;
-    }
-    return;
-  }
-  drawHorizontalBarChart(elements.chartFinance, dataset, {
-    paddingLeft: 164,
-    paddingRight: 32,
-    paddingTop: 36,
-    paddingBottom: 40,
-    barGap: 20,
-    axisSteps: 3,
+  const segmentTotal = Array.isArray(insight?.dataset)
+    ? insight.dataset.reduce((acc, segment) => acc + Number(segment?.value ?? 0), 0)
+    : 0;
+  const headline = segmentTotal > 0 ? `Savings snapshot (${formatChartNumber(segmentTotal)})` : 'No measurable impact yet';
+  const copy = state.commandError
+    || (snapshot
+      ? `As of ${new Date(snapshot).toLocaleDateString()} • DSO baseline ${baseline} days.`
+      : `DSO baseline ${baseline} days.`);
+  setInsightFallback(container, {
+    headline,
+    copy,
   });
-  updateChartLegend(elements.chartFinanceLegend, dataset, {
-    emptyMessage: state.commandError || 'Finance run produced no measurable changes yet.',
-  });
-  if (elements.chartFinanceNote) {
-    if (snapshot) {
-      const parsed = new Date(snapshot);
-      elements.chartFinanceNote.textContent = Number.isNaN(parsed.getTime())
-        ? `DSO baseline ${baseline} days.`
-        : `As of ${parsed.toLocaleDateString()}`;
-    } else {
-      elements.chartFinanceNote.textContent = `DSO baseline ${baseline} days.`;
-    }
-  }
 }
 
 function renderInventoryInsights() {
-  if (!elements.chartInventoryActions) {
+  const container = elements.reactInventoryCard;
+  if (!container) {
     return;
   }
   const scenario = state.inventoryScenarioResult;
-  if (scenario) {
-    renderScenarioInventoryInsights(scenario);
-    return;
-  }
-
-  const insight = getCommandInventoryInsights();
-  const dataset = Array.isArray(insight?.dataset) ? insight.dataset.filter((item) => Number(item?.value) > 0) : [];
-  const hasData = dataset.length > 0;
-  const totalSkus = Number(insight?.totalSkus ?? 0);
-  const scenarioAvailable = Boolean(insight?.scenarioAvailable);
-
-  if (elements.chartInventoryHeadline) {
-    elements.chartInventoryHeadline.textContent = hasData ? 'Prioritized SKU guidance' : 'Inventory steady';
-  }
-  if (elements.chartInventoryBadge) {
-    elements.chartInventoryBadge.hidden = !scenarioAvailable;
-  }
-
-  toggleChartState(elements.chartInventoryActions, elements.chartInventoryEmpty, hasData);
-  if (!hasData) {
-    if (elements.chartInventoryEmpty) {
-      elements.chartInventoryEmpty.textContent =
-        state.commandError || 'No active recommendations. Run the ordering agent to refresh.';
-    }
-    updateChartLegend(elements.chartInventoryLegend, [], {
-      emptyMessage: state.commandError || 'No inventory forecast data available.',
+  const baseInsight = scenario ? buildScenarioInventoryInsight(scenario) : getCommandInventoryInsights();
+  const embed = getEmbedApi();
+  if (embed?.renderInventoryCard) {
+    embed.renderInventoryCard(container, {
+      insight: baseInsight,
+      loading: Boolean(state.commandLoading),
+      error: state.commandError,
     });
-    if (elements.chartInventoryNote) {
-      elements.chartInventoryNote.textContent = state.commandError
-        ? state.commandError
-        : 'Run the ordering agent to refresh inventory insights.';
-    }
+    container.classList.add('react-mounted');
     return;
   }
-  drawHorizontalBarChart(elements.chartInventoryActions, dataset, {
-    paddingLeft: 160,
-    paddingRight: 28,
-    paddingTop: 32,
-    paddingBottom: 36,
-    barGap: 18,
-    axisSteps: 3,
+
+  container.classList.remove('react-mounted');
+  const totalSkus = Number(baseInsight?.totalSkus ?? 0);
+  const headline = totalSkus > 0 ? 'Prioritized SKU guidance' : 'Inventory steady';
+  const copy = state.commandError
+    || (scenario
+      ? 'Scenario projections ready. React renderer not loaded yet.'
+      : totalSkus > 0
+        ? `Tracking ${totalSkus.toLocaleString()} SKU${totalSkus === 1 ? '' : 's'} across the forecast.`
+        : 'No active recommendations. Run the ordering agent to refresh.');
+  setInsightFallback(container, {
+    headline,
+    copy,
   });
-  updateChartLegend(elements.chartInventoryLegend, dataset, {
-    emptyMessage: state.commandError || 'No inventory forecast data available.',
-  });
-  if (elements.chartInventoryNote) {
-    elements.chartInventoryNote.textContent = `Tracking ${totalSkus.toLocaleString()} SKU${totalSkus === 1 ? '' : 's'} across the forecast.`;
-  }
 }
 
 function computeInventoryActionCounts(entries) {
@@ -2363,91 +2307,18 @@ function buildInventoryDataset(counts, { prefix } = {}) {
   return dataset;
 }
 
-function renderScenarioInventoryInsights(scenario) {
-  if (elements.chartInventoryHeadline) {
-    elements.chartInventoryHeadline.textContent = 'Scenario comparison';
-  }
-  if (elements.chartInventoryBadge) {
-    elements.chartInventoryBadge.textContent = 'Scenario ready';
-    elements.chartInventoryBadge.hidden = false;
-  }
-  const baselineEntries = Object.entries(scenario.baseline || {}).map(([sku, detail]) => ({
-    supply_sku: sku,
-    ...(detail || {}),
-  }));
+function buildScenarioInventoryInsight(scenario) {
   const scenarioEntries = Object.entries(scenario.scenario || {}).map(([sku, detail]) => ({
     supply_sku: sku,
     ...(detail || {}),
   }));
-  const baselineCounts = computeInventoryActionCounts(baselineEntries);
-  const scenarioCounts = computeInventoryActionCounts(scenarioEntries);
-  const actionKeys = Array.from(
-    new Set([
-      ...Object.keys(baselineCounts || {}),
-      ...Object.keys(scenarioCounts || {}),
-      'reorder',
-      'watch',
-      'buffer_ok',
-    ]),
-  ).filter(Boolean);
-  const actionLabels = {
-    reorder: 'Reorder',
-    watch: 'Watch',
-    buffer_ok: 'Buffer OK',
+  const counts = computeInventoryActionCounts(scenarioEntries);
+  const dataset = buildInventoryDataset(counts);
+  return {
+    dataset,
+    totalSkus: scenarioEntries.length,
+    scenarioAvailable: true,
   };
-  const dataset = [];
-  actionKeys.forEach((action, index) => {
-    const label = actionLabels[action] || action.replace(/_/g, ' ').replace(/\b\w/g, (char) => char.toUpperCase());
-    const baseValue = baselineCounts[action] || 0;
-    const scenarioValue = scenarioCounts[action] || 0;
-    dataset.push({
-      group: label,
-      series: 'Baseline',
-      label: `${label} — Baseline`,
-      value: baseValue,
-      color: CHART_COLORS[index % CHART_COLORS.length],
-      displayValue: `${baseValue}`,
-    });
-    dataset.push({
-      group: label,
-      series: 'Scenario',
-      label: `${label} — Scenario`,
-      value: scenarioValue,
-      color: CHART_ALT_COLORS[index % CHART_ALT_COLORS.length],
-      displayValue: `${scenarioValue}`,
-    });
-  });
-
-  const usable = dataset.filter((item) => item.value > 0);
-  const hasData = usable.length > 0;
-  toggleChartState(elements.chartInventoryActions, elements.chartInventoryEmpty, hasData);
-  if (!hasData) {
-    updateChartLegend(elements.chartInventoryLegend, [], {
-      emptyMessage: 'Scenario returned no actionable SKUs.',
-    });
-    if (elements.chartInventoryNote) {
-      elements.chartInventoryNote.textContent = 'Count of SKUs flagged for reorder, watch lists, or healthy buffers.';
-    }
-    return;
-  }
-  drawBarChart(elements.chartInventoryActions, dataset, {
-    padding: 40,
-    groupSpacing: 32,
-    seriesSpacing: 14,
-  });
-  updateChartLegend(elements.chartInventoryLegend, dataset, {
-    emptyMessage: 'Scenario returned no actionable SKUs.',
-  });
-  if (elements.chartInventoryNote) {
-    const growth = Number(scenario.growth_percent ?? state.inventoryScenarioInputs.growthPercent ?? 0);
-    const leadDelta = Number(scenario.lead_time_delta ?? state.inventoryScenarioInputs.leadTimeDelta ?? 0);
-    const applied = Number(scenario.lead_time_applied ?? INVENTORY_BASE_LEAD_TIME + leadDelta);
-    const tracked = Array.isArray(scenario.skus) && scenario.skus.length ? scenario.skus.length : scenarioEntries.length;
-    const pieces = [];
-    pieces.push(`Baseline vs scenario mix (growth ${growth}%, lead ${leadDelta >= 0 ? '+' : ''}${leadDelta}d → ${applied}d)`);
-    pieces.push(`Tracking ${tracked} SKU${tracked === 1 ? '' : 's'}`);
-    elements.chartInventoryNote.textContent = `${pieces.join('. ')}.`;
-  }
 }
 
 function renderScenarioSummary() {
@@ -3840,9 +3711,11 @@ async function refreshTasks({ silent = false } = {}) {
 }
 
 async function refreshCommandInsights({ silent = true } = {}) {
+  state.commandLoading = true;
   if (!state.apiBase) {
     state.commandInsights = computeCommandInsightsFallback();
     state.commandError = 'API base URL is not configured.';
+    state.commandLoading = false;
     renderTaskInsights();
     renderFinanceInsights();
     renderInventoryInsights();
@@ -3863,6 +3736,7 @@ async function refreshCommandInsights({ silent = true } = {}) {
     }
     console.warn('Failed to refresh command insights', error);
   } finally {
+    state.commandLoading = false;
     renderTaskInsights();
     renderFinanceInsights();
     renderInventoryInsights();
