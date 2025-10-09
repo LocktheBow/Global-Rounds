@@ -602,6 +602,12 @@ function formatChartNumber(value) {
     return '0';
   }
   const abs = Math.abs(value);
+  if (abs >= 1_000_000_000) {
+    return `${(value / 1_000_000_000).toFixed(1)}B`;
+  }
+  if (abs >= 1_000_000) {
+    return `${(value / 1_000_000).toFixed(1)}M`;
+  }
   if (abs >= 1000) {
     return `${(value / 1000).toFixed(1)}k`;
   }
@@ -687,13 +693,13 @@ function computeFinanceInsightsFromState(finance = state.data?.finance) {
       {
         label: 'Labor hrs saved',
         value: Number.isFinite(laborHours) ? Number(laborHours.toFixed(2)) : 0,
-        displayValue: `${laborHours.toFixed(1)} hrs`,
+        displayValue: Number.isFinite(laborHours) ? formatHoursLabel(laborHours) : '0 hrs',
         color: CHART_COLORS[0],
       },
       {
         label: 'Projected cash ($K)',
         value: Number.isFinite(cash) ? Number((cash / 1000).toFixed(2)) : 0,
-        displayValue: usdFormatter.format(cash),
+        displayValue: formatCurrencyCompact(cash),
         color: CHART_COLORS[1],
       },
       {
@@ -848,8 +854,8 @@ function prepareCanvas(canvas) {
   }
   const dpr = window.devicePixelRatio || 1;
   const rect = canvas.getBoundingClientRect();
-  const width = Math.max(rect.width || canvas.width || 260, 1);
-  const height = Math.max(rect.height || canvas.height || 180, 1);
+  const width = Math.max(rect.width || canvas.clientWidth || canvas.width || 260, 1);
+  const height = Math.max(rect.height || canvas.clientHeight || canvas.height || 180, 1);
   canvas.style.width = `${width}px`;
   canvas.style.height = `${height}px`;
   canvas.width = Math.round(width * dpr);
@@ -2068,6 +2074,24 @@ function formatCurrency(value) {
   return usdFormatter.format(numeric);
 }
 
+function formatCurrencyCompact(value) {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) {
+    return '$0';
+  }
+  const abs = Math.abs(numeric);
+  if (abs >= 1_000_000_000) {
+    return `$${(numeric / 1_000_000_000).toFixed(2)}B`;
+  }
+  if (abs >= 1_000_000) {
+    return `$${(numeric / 1_000_000).toFixed(2)}M`;
+  }
+  if (abs >= 1000) {
+    return `$${(numeric / 1000).toFixed(1)}k`;
+  }
+  return usdFormatter.format(numeric);
+}
+
 function formatHeadcount(hours, shiftHours) {
   const numericHours = Number(hours);
   const numericShift = Number(shiftHours);
@@ -2083,6 +2107,17 @@ function formatQuantity(value) {
     return escapeHtml(value ?? '');
   }
   return numeric.toLocaleString(undefined, { maximumFractionDigits: 1 });
+}
+
+function formatHoursLabel(value) {
+  if (!Number.isFinite(value)) {
+    return '0 hrs';
+  }
+  const abs = Math.abs(value);
+  if (abs >= 1000) {
+    return `${(value / 1000).toFixed(1)}k hrs`;
+  }
+  return `${value.toFixed(1)} hrs`;
 }
 
 function updateData(data, message, options = {}) {
@@ -2219,12 +2254,12 @@ function renderFinanceInsights() {
     return;
   }
   drawHorizontalBarChart(elements.chartFinance, dataset, {
-    paddingLeft: 176,
+    paddingLeft: 164,
     paddingRight: 32,
     paddingTop: 36,
     paddingBottom: 40,
     barGap: 20,
-    axisSteps: 4,
+    axisSteps: 3,
   });
   updateChartLegend(elements.chartFinanceLegend, dataset, {
     emptyMessage: state.commandError || 'Finance run produced no measurable changes yet.',
