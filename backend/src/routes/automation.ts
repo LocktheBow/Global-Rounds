@@ -24,7 +24,7 @@ automationRouter.get('/agents/status', (_req: Request, res: Response) => {
 
 automationRouter.post('/agents/run', (req: Request, res: Response) => {
   const agents = Array.isArray(req.body?.agents) ? req.body.agents : [];
-  const filteredAgents = agents.filter((agent): agent is string => typeof agent === 'string');
+  const filteredAgents = agents.filter((agent: unknown): agent is string => typeof agent === 'string');
   const validAgents = filteredAgents.filter(isAutomationAgent);
   if (!validAgents.length) {
     return res.status(400).json({ detail: 'Request must include agents to run.' });

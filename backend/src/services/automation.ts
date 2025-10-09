@@ -8,11 +8,13 @@ const DASHBOARD_SAMPLE_PATHS = [
 
 export const AUTOMATION_AGENTS = ['ordering', 'payments', 'workforce', 'engagement', 'performance'] as const;
 
-type AutomationAgent = (typeof AUTOMATION_AGENTS)[number];
+export type AutomationAgent = (typeof AUTOMATION_AGENTS)[number];
 
 type Primitive = string | number | boolean | null;
 
 type JsonValue = Primitive | JsonValue[] | { [key: string]: JsonValue };
+
+type JsonObject = Record<string, JsonValue>;
 
 interface DashboardData {
   ordering?: JsonValue;
@@ -25,24 +27,14 @@ interface DashboardData {
   tasks?: TaskRecord[];
 }
 
-interface InventoryForecastEntry {
+interface InventoryForecastEntry extends JsonObject {
   on_hand?: number;
   forecast_units?: number;
   recommended_buffer?: number;
   action?: string;
 }
 
-interface TaskRecord {
-  id: string;
-  title?: string;
-  task_type?: string;
-  priority?: string;
-  status?: string;
-  due_at?: string | null;
-  created_at?: string | null;
-  updated_at?: string | null;
-  [key: string]: JsonValue;
-}
+type TaskRecord = JsonObject & { id: string };
 
 interface AgentStatus {
   agent: AutomationAgent;
