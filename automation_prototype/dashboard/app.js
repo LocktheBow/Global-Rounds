@@ -4116,9 +4116,26 @@ loadSample();
 startStatusPolling();
 refreshStatus({ silent: true });
 loadInventoryForecast({ silent: true });
+
 window.addEventListener('command-insights-ready', () => {
   renderInsights();
 });
+
+function ensureCommandInsightsReady(retries = 30) {
+  if (getEmbedApi()) {
+    renderInsights();
+    return;
+  }
+  if (retries > 0) {
+    window.setTimeout(() => ensureCommandInsightsReady(retries - 1), 150);
+  }
+}
+
+if (window.CommandInsightsEmbedReady || getEmbedApi()) {
+  renderInsights();
+} else {
+  ensureCommandInsightsReady();
+}
 function handleScenarioCsvExport() {
   const scenario = state.inventoryScenarioResult;
   if (!scenario) {
