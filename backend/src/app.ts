@@ -1,4 +1,5 @@
 import express from 'express';
+import type { NextFunction, Request, Response } from 'express';
 import cors from 'cors';
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
@@ -16,11 +17,18 @@ export const createApp = () => {
 
   app.use('/api/analytics', analyticsRouter);
   app.use('/api/command', commandRouter);
+  app.use('/api', (_req: Request, res: Response) => {
+    res.status(404).json({ detail: 'Not Found' });
+  });
 
   const staticDir = join(process.cwd(), 'automation_prototype', 'dashboard');
   if (existsSync(staticDir)) {
     app.use(express.static(staticDir));
-    app.get('*', (_req, res) => {
+    app.get('*', (req: Request, res: Response, next: NextFunction) => {
+      if (req.path.startsWith('/api')) {
+        next();
+        return;
+      }
       res.sendFile(join(staticDir, 'index.html'));
     });
   }
