@@ -6,6 +6,7 @@ import { buildSupplierSeries, type SupplierReliabilityDatum } from '../../utils/
 export interface RailSupplierMiniProps {
   data: SupplierReliabilityDatum[];
   loading?: boolean;
+  live?: boolean;
 }
 
 const riskColor = (disputeRate: number) => {
@@ -14,7 +15,7 @@ const riskColor = (disputeRate: number) => {
   return '#34d399';
 };
 
-export const RailSupplierMini = ({ data, loading = false }: RailSupplierMiniProps) => {
+export const RailSupplierMini = ({ data, loading = false, live = false }: RailSupplierMiniProps) => {
   const seriesData = useMemo(() => buildSupplierSeries(data, null), [data]);
   const topSuppliers = seriesData.suppliers.slice(0, 8);
 
@@ -60,9 +61,16 @@ export const RailSupplierMini = ({ data, loading = false }: RailSupplierMiniProp
 
   return (
     <section className="rounded-xl border border-slate-800 bg-slate-900/70 p-4 shadow-lg">
-      <header className="mb-2">
-        <h3 className="text-sm font-semibold text-slate-200">Supplier Reliability</h3>
-        <p className="text-xs text-slate-500">On-time % with dispute markers (mini)</p>
+      <header className="mb-2 flex items-center justify-between">
+        <div>
+          <h3 className="text-sm font-semibold text-slate-200">Supplier Reliability</h3>
+          <p className="text-xs text-slate-500">On-time % with dispute markers (mini)</p>
+        </div>
+        {live ? (
+          <span className="rounded-full border border-emerald-500/40 bg-emerald-500/10 px-2.5 py-0.5 text-[10px] font-semibold text-emerald-300">
+            Live data
+          </span>
+        ) : null}
       </header>
       {loading ? (
         <div className="text-xs text-slate-500">Loading…</div>
@@ -74,4 +82,3 @@ export const RailSupplierMini = ({ data, loading = false }: RailSupplierMiniProp
 };
 
 export default RailSupplierMini;
-

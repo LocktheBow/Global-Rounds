@@ -917,13 +917,12 @@ function renderRevenueMini() {
   const container = elements.reactRevenueMini;
   if (!container) return;
   const embed = getEmbedApi();
-  const data = Array.isArray(state.analyticsSummary?.revenueByCategory)
-    ? state.analyticsSummary.revenueByCategory
-    : buildRevenueDemoData();
+  const live = Array.isArray(state.analyticsSummary?.revenueByCategory) && state.analyticsSummary.revenueByCategory.length > 0;
+  const data = live ? state.analyticsSummary.revenueByCategory : buildRevenueDemoData();
   let reactMounted = false;
   if (embed?.renderRevenueMini) {
     try {
-      embed.renderRevenueMini(container, { data, loading: false });
+      embed.renderRevenueMini(container, { data, loading: false, live });
       container.classList.add('react-mounted');
       reactMounted = true;
     } catch (error) {
@@ -939,13 +938,12 @@ function renderSupplierMini() {
   const container = elements.reactSupplierMini;
   if (!container) return;
   const embed = getEmbedApi();
-  const data = Array.isArray(state.analyticsSummary?.supplierReliability)
-    ? state.analyticsSummary.supplierReliability
-    : buildSupplierDemoData();
+  const live = Array.isArray(state.analyticsSummary?.supplierReliability) && state.analyticsSummary.supplierReliability.length > 0;
+  const data = live ? state.analyticsSummary.supplierReliability : buildSupplierDemoData();
   let reactMounted = false;
   if (embed?.renderSupplierMini) {
     try {
-      embed.renderSupplierMini(container, { data, loading: false });
+      embed.renderSupplierMini(container, { data, loading: false, live });
       container.classList.add('react-mounted');
       reactMounted = true;
     } catch (error) {

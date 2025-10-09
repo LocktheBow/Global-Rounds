@@ -6,11 +6,12 @@ import { buildRevenueSeries, type RevenueByCategoryDatum } from '../../utils/cal
 export interface RailRevenueMiniProps {
   data: RevenueByCategoryDatum[];
   loading?: boolean;
+  live?: boolean;
 }
 
 const palette = ['#16a34a', '#22d3ee', '#fde047', '#f97316', '#a855f7', '#f43f5e', '#38bdf8'];
 
-export const RailRevenueMini = ({ data, loading = false }: RailRevenueMiniProps) => {
+export const RailRevenueMini = ({ data, loading = false, live = false }: RailRevenueMiniProps) => {
   const { dates, series } = useMemo(() => buildRevenueSeries(data), [data]);
 
   const option = useMemo<EChartsOption>(() => {
@@ -49,9 +50,16 @@ export const RailRevenueMini = ({ data, loading = false }: RailRevenueMiniProps)
 
   return (
     <section className="rounded-xl border border-slate-800 bg-slate-900/70 p-4 shadow-lg">
-      <header className="mb-2">
-        <h3 className="text-sm font-semibold text-slate-200">Revenue by Category</h3>
-        <p className="text-xs text-slate-500">Stacked area over time (mini)</p>
+      <header className="mb-2 flex items-center justify-between">
+        <div>
+          <h3 className="text-sm font-semibold text-slate-200">Revenue by Category</h3>
+          <p className="text-xs text-slate-500">Stacked area over time (mini)</p>
+        </div>
+        {live ? (
+          <span className="rounded-full border border-emerald-500/40 bg-emerald-500/10 px-2.5 py-0.5 text-[10px] font-semibold text-emerald-300">
+            Live data
+          </span>
+        ) : null}
       </header>
       {loading ? (
         <div className="text-xs text-slate-500">Loading…</div>
@@ -63,4 +71,3 @@ export const RailRevenueMini = ({ data, loading = false }: RailRevenueMiniProps)
 };
 
 export default RailRevenueMini;
-

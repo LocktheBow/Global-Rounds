@@ -109,11 +109,13 @@ const renderInventoryCard = (host: HTMLElement, props: InventoryProps) => {
 type RevenueMiniProps = {
   data: import('./utils/calc').RevenueByCategoryDatum[];
   loading?: boolean;
+  live?: boolean;
 };
 
 type SupplierMiniProps = {
   data: import('./utils/calc').SupplierReliabilityDatum[];
   loading?: boolean;
+  live?: boolean;
 };
 
 const renderRevenueMini = (host: HTMLElement, props: RevenueMiniProps) => {
