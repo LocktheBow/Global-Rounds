@@ -4,6 +4,8 @@ import {
   TaskLoadCard,
   FinancePulseCard,
   InventoryActionsCard,
+  RailRevenueMini,
+  RailSupplierMini,
 } from './components/command';
 import type {
   CommandInsightsResponse,
@@ -104,6 +106,34 @@ const renderInventoryCard = (host: HTMLElement, props: InventoryProps) => {
   );
 };
 
+type RevenueMiniProps = {
+  data: import('./utils/calc').RevenueByCategoryDatum[];
+  loading?: boolean;
+};
+
+type SupplierMiniProps = {
+  data: import('./utils/calc').SupplierReliabilityDatum[];
+  loading?: boolean;
+};
+
+const renderRevenueMini = (host: HTMLElement, props: RevenueMiniProps) => {
+  const { root } = ensureRoot(host);
+  root.render(
+    <StrictMode>
+      <RailRevenueMini {...props} />
+    </StrictMode>,
+  );
+};
+
+const renderSupplierMini = (host: HTMLElement, props: SupplierMiniProps) => {
+  const { root } = ensureRoot(host);
+  root.render(
+    <StrictMode>
+      <RailSupplierMini {...props} />
+    </StrictMode>,
+  );
+};
+
 const unmount = (host: HTMLElement) => {
   const record = rootCache.get(host);
   if (!record) {
@@ -117,6 +147,8 @@ const api = {
   renderTaskCard,
   renderFinanceCard,
   renderInventoryCard,
+  renderRevenueMini,
+  renderSupplierMini,
   unmount,
 };
 

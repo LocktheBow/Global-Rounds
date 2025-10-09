@@ -109,6 +109,8 @@ const elements = {
   reactTaskCard: document.getElementById('react-task-card'),
   reactFinanceCard: document.getElementById('react-finance-card'),
   reactInventoryCard: document.getElementById('react-inventory-card'),
+  reactRevenueMini: document.getElementById('react-revenue-mini'),
+  reactSupplierMini: document.getElementById('react-supplier-mini'),
   scenarioForm: document.getElementById('inventory-scenario-form'),
   scenarioGrowth: document.getElementById('scenario-growth'),
   scenarioLead: document.getElementById('scenario-lead'),
@@ -843,6 +845,85 @@ function getEmbedApi() {
     return api.CommandInsightsEmbed;
   }
   return null;
+}
+
+function buildRevenueDemoData() {
+  // 30 days of synthetic revenue across 4 categories
+  const categories = ['Supplies', 'Devices', 'Services', 'Other'];
+  const today = new Date();
+  const pad = (n) => String(n).padStart(2, '0');
+  const rows = [];
+  for (let i = 29; i >= 0; i--) {
+    const d = new Date(today);
+    d.setDate(today.getDate() - i);
+    const date = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+    categories.forEach((category, index) => {
+      const base = 5000 + index * 1800;
+      const wave = Math.sin((i / 30) * Math.PI * 2 + index) * 800;
+      const noise = (i % 7) * 50;
+      rows.push({ date, category, revenue: Math.max(0, Math.round(base + wave + noise)) });
+    });
+  }
+  return rows;
+}
+
+function buildSupplierDemoData() {
+  // 12 suppliers with plausible scores
+  const regions = ['NE', 'SE', 'MW', 'SW', 'NW'];
+  const rows = Array.from({ length: 12 }).map((_, i) => {
+    const onTime = 0.75 + Math.random() * 0.22; // 75-97%
+    const dispute = 0.02 + Math.random() * 0.1; // 2-12%
+    const defect = 0.01 + Math.random() * 0.06; // 1-7%
+    return {
+      supplierId: `SUP-${String(i + 1).padStart(3, '0')}`,
+      supplierName: `Supplier ${i + 1}`,
+      onTimePct: Math.min(0.99, Number(onTime.toFixed(3))),
+      disputeRate: Number(dispute.toFixed(3)),
+      defectRate: Number(defect.toFixed(3)),
+      region: regions[i % regions.length],
+    };
+  });
+  return rows;
+}
+
+function renderRevenueMini() {
+  const container = elements.reactRevenueMini;
+  if (!container) return;
+  const embed = getEmbedApi();
+  const data = buildRevenueDemoData();
+  let reactMounted = false;
+  if (embed?.renderRevenueMini) {
+    try {
+      embed.renderRevenueMini(container, { data, loading: false });
+      container.classList.add('react-mounted');
+      reactMounted = true;
+    } catch (error) {
+      console.error('Failed to render React revenue mini', error);
+    }
+  }
+  if (!reactMounted) {
+    container.classList.remove('react-mounted');
+  }
+}
+
+function renderSupplierMini() {
+  const container = elements.reactSupplierMini;
+  if (!container) return;
+  const embed = getEmbedApi();
+  const data = buildSupplierDemoData();
+  let reactMounted = false;
+  if (embed?.renderSupplierMini) {
+    try {
+      embed.renderSupplierMini(container, { data, loading: false });
+      container.classList.add('react-mounted');
+      reactMounted = true;
+    } catch (error) {
+      console.error('Failed to render React supplier mini', error);
+    }
+  }
+  if (!reactMounted) {
+    container.classList.remove('react-mounted');
+  }
 }
 
 function setInsightFallback(container, { headline, copy }) {
@@ -2220,6 +2301,8 @@ function renderInsights() {
   renderTaskInsights();
   renderFinanceInsights();
   renderInventoryInsights();
+  renderRevenueMini();
+  renderSupplierMini();
 }
 
 function renderTaskInsights() {
