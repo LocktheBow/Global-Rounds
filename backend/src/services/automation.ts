@@ -28,10 +28,10 @@ interface DashboardData {
 }
 
 interface InventoryForecastEntry extends JsonObject {
-  on_hand?: number;
-  forecast_units?: number;
-  recommended_buffer?: number;
-  action?: string;
+  on_hand?: JsonValue;
+  forecast_units?: JsonValue;
+  recommended_buffer?: JsonValue;
+  action?: JsonValue;
 }
 
 type TaskRecord = JsonObject & { id: string };

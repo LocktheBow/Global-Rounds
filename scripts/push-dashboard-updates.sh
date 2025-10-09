@@ -7,8 +7,9 @@ git add automation_prototype/dashboard/index.html \
         backend/src/app.ts \
         backend/src/routes/automation.ts \
         backend/src/services/automation.ts \
-        backend/test/run-tests.js
+        backend/test/run-tests.js \
+        scripts/push-dashboard-updates.sh
 
-git commit -m "Serve automation dashboard with embedded command insights"
+git commit -m "Add automation API shim and embed command insights"
 
 git push origin main
