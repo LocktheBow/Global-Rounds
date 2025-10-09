@@ -832,7 +832,17 @@ function updateChartLegend(element, items, { emptyMessage = 'No data yet.' } = {
 }
 
 function getEmbedApi() {
-  return window.CommandInsightsEmbed || null;
+  const api = window.CommandInsightsEmbed || null;
+  if (!api) return null;
+  // Direct shape: { renderTaskCard, renderFinanceCard, renderInventoryCard }
+  if (typeof api.renderTaskCard === 'function') {
+    return api;
+  }
+  // IIFE export shape: { CommandInsightsEmbed: { ..api } }
+  if (api.CommandInsightsEmbed && typeof api.CommandInsightsEmbed.renderTaskCard === 'function') {
+    return api.CommandInsightsEmbed;
+  }
+  return null;
 }
 
 function setInsightFallback(container, { headline, copy }) {
@@ -2334,8 +2344,10 @@ function renderInventoryInsights() {
       console.error('Failed to render React inventory card', error);
     }
   }
-
-  container.classList.remove('react-mounted');
+  // Only show the non-React fallback when React failed to mount
+  if (!reactMounted) {
+    container.classList.remove('react-mounted');
+  }
   const totalSkus = Number(baseInsight?.totalSkus ?? 0);
   const headline = totalSkus > 0 ? 'Prioritized SKU guidance' : 'Inventory steady';
   const copy = state.commandError
@@ -2351,6 +2363,7 @@ function renderInventoryInsights() {
       })
     : [];
   if (!reactMounted) {
+    // Ensure fallback is visible only when React isn't mounted
     container.classList.remove('react-mounted');
     renderInsightFallback(container, {
       eyebrow: 'Inventory actions',

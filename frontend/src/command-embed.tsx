@@ -44,17 +44,32 @@ const ensureRoot = (host: HTMLElement): RootRecord => {
     return cached;
   }
 
-  const shadow = host.shadowRoot ?? host.attachShadow({ mode: 'open' });
-  // Reset to avoid duplicate wrappers when rehydrating.
-  shadow.innerHTML = '';
+  // Allow hosts to opt-out of Shadow DOM by adding data-no-shadow="true"
+  const useShadow = !host.hasAttribute('data-no-shadow');
+  let container: HTMLDivElement;
 
-  const style = document.createElement('style');
-  style.textContent = styles;
-  shadow.appendChild(style);
+  if (useShadow) {
+    const shadow = host.shadowRoot ?? host.attachShadow({ mode: 'open' });
+    // Reset to avoid duplicate wrappers when rehydrating.
+    shadow.innerHTML = '';
 
-  const container = document.createElement('div');
-  container.className = 'gr-command-card';
-  shadow.appendChild(container);
+    const style = document.createElement('style');
+    style.textContent = styles;
+    shadow.appendChild(style);
+
+    container = document.createElement('div');
+    container.className = 'gr-command-card';
+    shadow.appendChild(container);
+  } else {
+    // Light DOM mounting for environments that don’t play nicely with Shadow DOM
+    host.innerHTML = '';
+    const style = document.createElement('style');
+    style.textContent = styles;
+    host.appendChild(style);
+    container = document.createElement('div');
+    container.className = 'gr-command-card';
+    host.appendChild(container);
+  }
 
   const root = createRoot(container);
   const record = { root, container };
