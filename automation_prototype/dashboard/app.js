@@ -3002,8 +3002,6 @@ function renderChat() {
     } else if (state.chatError) {
       elements.chatStatus.textContent = 'Error';
       elements.chatStatus.classList.add('pill-error');
-    } else if (state.chatModel) {
-      elements.chatStatus.textContent = `Model: ${state.chatModel}`;
     } else {
       elements.chatStatus.textContent = 'Ready';
     }
