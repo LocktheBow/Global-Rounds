@@ -114,6 +114,9 @@ declare global {
 window.CommandInsightsEmbed = api;
 window.CommandInsightsEmbedReady = true;
 window.dispatchEvent(new CustomEvent('command-insights-ready'));
+if (typeof console !== 'undefined') {
+  console.info('[CommandInsightsEmbed] ready');
+}
 
 export type { CommandInsightsResponse };
 export { api as CommandInsightsEmbed };
