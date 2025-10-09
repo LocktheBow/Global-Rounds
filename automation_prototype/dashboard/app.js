@@ -2220,13 +2220,17 @@ function renderTaskInsights() {
   const embed = getEmbedApi();
   const insight = getCommandTaskInsights();
   if (embed?.renderTaskCard) {
-    embed.renderTaskCard(container, {
-      insight,
-      loading: Boolean(state.commandLoading),
-      error: state.commandError,
-    });
-    container.classList.add('react-mounted');
-    return;
+    try {
+      embed.renderTaskCard(container, {
+        insight,
+        loading: Boolean(state.commandLoading),
+        error: state.commandError,
+      });
+      container.classList.add('react-mounted');
+      return;
+    } catch (error) {
+      console.error('Failed to render React task card', error);
+    }
   }
 
   const total = Number(insight?.total ?? 0);
@@ -2260,13 +2264,17 @@ function renderFinanceInsights() {
   const embed = getEmbedApi();
   const insight = getCommandFinanceInsights();
   if (embed?.renderFinanceCard) {
-    embed.renderFinanceCard(container, {
-      insight,
-      loading: Boolean(state.commandLoading),
-      error: state.commandError,
-    });
-    container.classList.add('react-mounted');
-    return;
+    try {
+      embed.renderFinanceCard(container, {
+        insight,
+        loading: Boolean(state.commandLoading),
+        error: state.commandError,
+      });
+      container.classList.add('react-mounted');
+      return;
+    } catch (error) {
+      console.error('Failed to render React finance card', error);
+    }
   }
 
   container.classList.remove('react-mounted');
@@ -2304,13 +2312,17 @@ function renderInventoryInsights() {
   const baseInsight = scenario ? buildScenarioInventoryInsight(scenario) : getCommandInventoryInsights();
   const embed = getEmbedApi();
   if (embed?.renderInventoryCard) {
-    embed.renderInventoryCard(container, {
-      insight: baseInsight,
-      loading: Boolean(state.commandLoading),
-      error: state.commandError,
-    });
-    container.classList.add('react-mounted');
-    return;
+    try {
+      embed.renderInventoryCard(container, {
+        insight: baseInsight,
+        loading: Boolean(state.commandLoading),
+        error: state.commandError,
+      });
+      container.classList.add('react-mounted');
+      return;
+    } catch (error) {
+      console.error('Failed to render React inventory card', error);
+    }
   }
 
   container.classList.remove('react-mounted');
