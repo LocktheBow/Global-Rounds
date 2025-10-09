@@ -61,6 +61,7 @@ const state = {
   commandInsights: null,
   commandError: null,
   commandLoading: false,
+  analyticsSummary: null,
 };
 
 try {
@@ -847,6 +848,32 @@ function getEmbedApi() {
   return null;
 }
 
+async function refreshAnalytics({ silent = true } = {}) {
+  // Try to fetch analytics summary if the backend supports it.
+  // Do NOT use callApi here to avoid flipping apiOnline if the route is missing.
+  try {
+    const base = (state.apiBase || '').replace(/\/$/, '');
+    if (!base) return;
+    const url = `${base}/api/analytics/summary`;
+    const response = await fetch(url, { headers: { Accept: 'application/json' } });
+    if (!response.ok) {
+      return; // not supported; keep existing summary or fallback
+    }
+    const json = await response.json();
+    if (json && typeof json === 'object') {
+      const revenue = Array.isArray(json.revenueByCategory) ? json.revenueByCategory : [];
+      const suppliers = Array.isArray(json.supplierReliability) ? json.supplierReliability : [];
+      state.analyticsSummary = { revenueByCategory: revenue, supplierReliability: suppliers };
+      renderRevenueMini();
+      renderSupplierMini();
+    }
+  } catch (error) {
+    if (!silent) {
+      console.warn('Analytics summary not available:', error);
+    }
+  }
+}
+
 function buildRevenueDemoData() {
   // 30 days of synthetic revenue across 4 categories
   const categories = ['Supplies', 'Devices', 'Services', 'Other'];
@@ -890,7 +917,9 @@ function renderRevenueMini() {
   const container = elements.reactRevenueMini;
   if (!container) return;
   const embed = getEmbedApi();
-  const data = buildRevenueDemoData();
+  const data = Array.isArray(state.analyticsSummary?.revenueByCategory)
+    ? state.analyticsSummary.revenueByCategory
+    : buildRevenueDemoData();
   let reactMounted = false;
   if (embed?.renderRevenueMini) {
     try {
@@ -910,7 +939,9 @@ function renderSupplierMini() {
   const container = elements.reactSupplierMini;
   if (!container) return;
   const embed = getEmbedApi();
-  const data = buildSupplierDemoData();
+  const data = Array.isArray(state.analyticsSummary?.supplierReliability)
+    ? state.analyticsSummary.supplierReliability
+    : buildSupplierDemoData();
   let reactMounted = false;
   if (embed?.renderSupplierMini) {
     try {
@@ -4069,6 +4100,7 @@ function startStatusPolling() {
   }
   state.statusTimer = window.setInterval(() => {
     refreshStatus({ silent: true });
+    refreshAnalytics({ silent: true });
   }, 30000);
 }
 
@@ -4298,6 +4330,7 @@ loadSample();
 startStatusPolling();
 refreshStatus({ silent: true });
 loadInventoryForecast({ silent: true });
+refreshAnalytics({ silent: true });
 
 window.addEventListener('command-insights-ready', () => {
   renderInsights();
