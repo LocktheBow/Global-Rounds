@@ -848,11 +848,16 @@ function prepareCanvas(canvas) {
   }
   const dpr = window.devicePixelRatio || 1;
   const rect = canvas.getBoundingClientRect();
-  const width = Math.max(rect.width, canvas.width || 260);
-  const height = Math.max(rect.height, canvas.height || 180);
-  canvas.width = width * dpr;
-  canvas.height = height * dpr;
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const width = Math.max(rect.width || canvas.width || 260, 1);
+  const height = Math.max(rect.height || canvas.height || 180, 1);
+  canvas.style.width = `${width}px`;
+  canvas.style.height = `${height}px`;
+  canvas.width = Math.round(width * dpr);
+  canvas.height = Math.round(height * dpr);
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  if (dpr !== 1) {
+    ctx.scale(dpr, dpr);
+  }
   ctx.clearRect(0, 0, width, height);
   return { ctx, width, height };
 }
