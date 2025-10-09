@@ -5,6 +5,7 @@ import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import analyticsRouter from './routes/analytics';
 import commandRouter from './routes/command';
+import automationRouter from './routes/automation';
 
 export const createApp = () => {
   const app = express();
@@ -17,9 +18,15 @@ export const createApp = () => {
 
   app.use('/api/analytics', analyticsRouter);
   app.use('/api/command', commandRouter);
+  app.use('/api', automationRouter);
   app.use('/api', (_req: Request, res: Response) => {
     res.status(404).json({ detail: 'Not Found' });
   });
+
+  const dataDir = join(process.cwd(), 'automation_prototype', 'data');
+  if (existsSync(dataDir)) {
+    app.use('/data', express.static(dataDir));
+  }
 
   const staticDir = join(process.cwd(), 'automation_prototype', 'dashboard');
   if (existsSync(staticDir)) {

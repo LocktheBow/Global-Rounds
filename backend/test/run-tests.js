@@ -3,6 +3,11 @@ require('../../test/register-ts');
 
 const assert = require('node:assert/strict');
 const { getAnalyticsSummary, parseAnalyticsFilters } = require('../src/services/analytics');
+const {
+  getAgentStatuses,
+  runAllAgents,
+  runInventoryScenario,
+} = require('../src/services/automation');
 
 const results = [];
 
@@ -38,6 +43,30 @@ run('parses filters from query params', () => {
   const filters = parseAnalyticsFilters({ from: '2024-01-01', riskLevel: 'high' });
   assert.strictEqual(filters.from, '2024-01-01');
   assert.strictEqual(filters.riskLevel, 'high');
+});
+
+run('returns automation agent statuses', () => {
+  const statuses = getAgentStatuses();
+  assert.ok(Array.isArray(statuses));
+  assert.strictEqual(statuses.length, 5);
+  statuses.forEach((status) => {
+    assert.ok(status.agent);
+    assert.ok(Object.prototype.hasOwnProperty.call(status, 'records'));
+  });
+});
+
+run('simulates inventory scenario', () => {
+  const result = runInventoryScenario({ growth_percent: 5, lead_time_delta: 2, skus: ['INC-XL-24'] });
+  assert.ok(result);
+  assert.ok(result.scenario['INC-XL-24']);
+  assert.strictEqual(result.skus.length, 1);
+});
+
+run('runs all automation agents', () => {
+  const response = runAllAgents();
+  assert.ok(response.run_at);
+  assert.ok(response.payload.module_last_run);
+  assert.ok(Array.isArray(response.payload.tasks));
 });
 
 const failed = results.filter((item) => item.status === 'failed');
