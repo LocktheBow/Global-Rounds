@@ -3713,6 +3713,17 @@ async function callApi(path, { method = 'GET', body, silent = false } = {}) {
 
   if (!response.ok) {
     const detail = payload?.detail || response.statusText || 'API request failed.';
+    if (response.status === 404 || response.status === 503) {
+      state.apiOnline = false;
+      const message =
+        detail && detail !== 'Not Found'
+          ? detail
+          : 'Automation API endpoint is not available. Using sample data until the backend is deployed.';
+      if (!silent) {
+        setApiStatus('offline', message);
+      }
+      throw new Error(message);
+    }
     state.apiOnline = true;
     if (!silent) {
       setApiStatus('error', detail);
