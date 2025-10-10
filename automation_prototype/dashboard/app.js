@@ -2432,6 +2432,22 @@ function renderTaskInsights() {
       copy: fallbackCopy,
       items: breakdown,
     });
+    const canvas = container.querySelector('#insight-task-canvas');
+    if (canvas) {
+      try {
+        const segments = Array.isArray(insight?.dataset)
+          ? insight.dataset.map((s, i) => ({
+              label: s.label,
+              value: Number(s.value) || 0,
+              color: s.color || CHART_COLORS[i % CHART_COLORS.length],
+            }))
+          : [];
+        drawDonutChart(canvas, segments, {
+          centerLabel: total > 0 ? total.toLocaleString() : '0',
+          centerSubLabel: 'tasks',
+        });
+      } catch (_) {}
+    }
   }
 }
 
@@ -2498,6 +2514,20 @@ function renderFinanceInsights() {
       copy,
       items: metrics,
     });
+    const canvas = container.querySelector('#insight-finance-canvas');
+    if (canvas) {
+      try {
+        const bars = Array.isArray(insight?.dataset)
+          ? insight.dataset.map((s, i) => ({
+              label: s.label,
+              value: Number(s.value) || 0,
+              color: s.color || CHART_COLORS[i % CHART_COLORS.length],
+              displayValue: s.displayValue,
+            }))
+          : [];
+        drawHorizontalBarChart(canvas, bars, { paddingTop: 18, paddingBottom: 24 });
+      } catch (_) {}
+    }
   }
 }
 
@@ -2564,6 +2594,19 @@ function renderInventoryInsights() {
       copy,
       items: metrics,
     });
+    const canvas = container.querySelector('#insight-inventory-canvas');
+    if (canvas) {
+      try {
+        const bars = Array.isArray(baseInsight?.dataset)
+          ? baseInsight.dataset.map((s, i) => ({
+              label: s.label,
+              value: Number(s.value) || 0,
+              color: s.color || CHART_COLORS[i % CHART_COLORS.length],
+            }))
+          : [];
+        drawBarChart(canvas, bars, { padding: 28 });
+      } catch (_) {}
+    }
   }
 }
 
