@@ -42,7 +42,7 @@ export const RailTaskMini = ({ insight, loading = false }: RailTaskMiniProps) =>
       {loading ? (
         <div className="text-xs text-slate-500">Loading…</div>
       ) : hasData ? (
-        <ReactECharts option={option} notMerge lazyUpdate style={{ height: 260 }} />
+        <ReactECharts option={option} notMerge lazyUpdate style={{ height: 280 }} />
       ) : (
         <div className="text-xs text-slate-500">No active tasks</div>
       )}

@@ -19,7 +19,7 @@ export const RailFinanceMini = ({ insight, loading = false }: RailFinanceMiniPro
     const max = Math.max(...values, 1);
     return {
       aria: { enabled: true },
-      grid: { left: 120, right: 16, top: 24, bottom: 36 },
+      grid: { left: 120, right: 16, top: 24, bottom: 52 },
       xAxis: {
         type: 'value',
         axisLabel: { color: '#cbd5f5', formatter: (v: number) => `${v.toLocaleString()}` },
@@ -47,7 +47,7 @@ export const RailFinanceMini = ({ insight, loading = false }: RailFinanceMiniPro
       {loading ? (
         <div className="text-xs text-slate-500">Loading…</div>
       ) : hasData ? (
-        <ReactECharts option={option} notMerge lazyUpdate style={{ height: 260 }} />
+        <ReactECharts option={option} notMerge lazyUpdate style={{ height: 280 }} />
       ) : (
         <div className="text-xs text-slate-500">No measurable impact yet</div>
       )}

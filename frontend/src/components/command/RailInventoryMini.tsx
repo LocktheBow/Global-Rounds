@@ -19,7 +19,7 @@ export const RailInventoryMini = ({ insight, loading = false }: RailInventoryMin
     const max = Math.max(...values, 1);
     return {
       aria: { enabled: true },
-      grid: { left: 50, right: 16, top: 24, bottom: 36 },
+      grid: { left: 50, right: 16, top: 24, bottom: 52 },
       xAxis: { type: 'category', data: labels, axisLabel: { color: '#cbd5f5' } },
       yAxis: {
         type: 'value',
@@ -47,7 +47,7 @@ export const RailInventoryMini = ({ insight, loading = false }: RailInventoryMin
       {loading ? (
         <div className="text-xs text-slate-500">Loading…</div>
       ) : hasData ? (
-        <ReactECharts option={option} notMerge lazyUpdate style={{ height: 260 }} />
+        <ReactECharts option={option} notMerge lazyUpdate style={{ height: 280 }} />
       ) : (
         <div className="text-xs text-slate-500">No active recommendations</div>
       )}
