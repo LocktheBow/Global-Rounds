@@ -338,12 +338,7 @@ input[type='range'] {
   overflow: hidden;
 }
 
-.react-insight-card.react-mounted {
-  padding: 0;
-  background: transparent;
-  border: none;
-  box-shadow: none;
-}
+/* Keep chart-card base styling even when React is mounted */
 
 .react-insight-card.react-mounted .insight-react-fallback {
   display: none;
