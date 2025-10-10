@@ -22,7 +22,7 @@ export const RailSupplierMini = ({ data, loading = false, live = false }: RailSu
   const option = useMemo<EChartsOption>(() => {
     return {
       aria: { enabled: true },
-      grid: { left: 120, right: 16, top: 24, bottom: 24 },
+      grid: { left: 150, right: 16, top: 24, bottom: 24 },
       tooltip: {
         trigger: 'item',
         valueFormatter: (value: number) => `${(value * 100).toFixed(1)}%`,
@@ -37,7 +37,7 @@ export const RailSupplierMini = ({ data, loading = false, live = false }: RailSu
         type: 'category',
         inverse: true,
         data: topSuppliers.map((s) => s.supplierName),
-        axisLabel: { color: '#cbd5f5' },
+        axisLabel: { color: '#cbd5f5', margin: 10 },
       },
       series: [
         {

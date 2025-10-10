@@ -35,6 +35,8 @@ export const TaskLoadCard = ({ insight, loading = false, error, compact = false 
 
   const option = useMemo<EChartsOption | null>(() => {
     if (!hasData) return null;
+    const centerY = compact ? '46%' : '52%';
+    const radius = compact ? ['50%', '76%'] : ['50%', '78%'];
     return {
       aria: { enabled: true, decal: { show: false } },
       tooltip: {
@@ -45,8 +47,8 @@ export const TaskLoadCard = ({ insight, loading = false, error, compact = false 
         {
           name: 'Tasks by status',
           type: 'pie',
-          radius: ['50%', '78%'],
-          center: ['50%', '52%'],
+          radius,
+          center: ['50%', centerY],
           avoidLabelOverlap: false,
           label: { show: false },
           itemStyle: {
