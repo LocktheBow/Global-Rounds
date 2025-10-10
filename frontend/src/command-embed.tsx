@@ -1,9 +1,9 @@
 import React, { StrictMode } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import {
-  TaskLoadCard,
-  FinancePulseCard,
-  InventoryActionsCard,
+  RailTaskMini,
+  RailFinanceMini,
+  RailInventoryMini,
   RailRevenueMini,
   RailSupplierMini,
 } from './components/command';
@@ -95,7 +95,7 @@ const renderTaskCard = (host: HTMLElement, props: TaskProps) => {
   const { root } = ensureRoot(host);
   root.render(
     <StrictMode>
-      <TaskLoadCard {...props} compact />
+      <RailTaskMini insight={props.insight} loading={props.loading} />
     </StrictMode>,
   );
 };
@@ -104,7 +104,7 @@ const renderFinanceCard = (host: HTMLElement, props: FinanceProps) => {
   const { root } = ensureRoot(host);
   root.render(
     <StrictMode>
-      <FinancePulseCard {...props} compact />
+      <RailFinanceMini insight={props.insight} loading={props.loading} />
     </StrictMode>,
   );
 };
@@ -113,7 +113,7 @@ const renderInventoryCard = (host: HTMLElement, props: InventoryProps) => {
   const { root } = ensureRoot(host);
   root.render(
     <StrictMode>
-      <InventoryActionsCard {...props} compact />
+      <RailInventoryMini insight={props.insight} loading={props.loading} />
     </StrictMode>,
   );
 };
