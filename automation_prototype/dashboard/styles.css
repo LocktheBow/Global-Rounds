@@ -235,7 +235,6 @@ input[type='range'] {
   display: flex;
   flex-direction: column;
   gap: 0.55rem;
-  height: 340px;
 }
 
 .chart-card-header {
@@ -337,34 +336,45 @@ input[type='range'] {
 .react-insight-card {
   position: relative;
   overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-  align-self: start;
 }
+
+/* Keep chart-card base styling even when React is mounted */
 
 .react-insight-card.react-mounted .insight-react-fallback {
   display: none;
 }
 
+/* Ensure embedded React cards don't inherit tall heights from grid/flex */
+.react-insight-card,
+.react-insight-card.react-mounted {
+  /* allow JS to pin height; avoid !important on height */
+  min-height: 0 !important;
+  align-items: stretch !important;
+  align-self: start !important; /* don't stretch to row height */
+}
+.react-insight-card > *,
+.react-insight-card.react-mounted > * {
+  height: auto !important;
+  min-height: 0 !important;
+}
+
 .insight-react-fallback {
   display: flex;
-  flex: 1;
-  min-height: 0;
+  min-height: 180px;
   flex-direction: column;
-  justify-content: flex-start;
-  gap: 0.5rem;
+  justify-content: center;
+  gap: 0.65rem;
 }
 
-.insight-react-copy:empty {
-  display: none;
+.insight-react-fallback ul {
+  margin: 0;
+  padding-left: 1.1rem;
+  color: rgba(11, 31, 77, 0.7);
+  font-size: 0.82rem;
 }
 
-.insight-canvas {
-  flex: 1;
-  width: 100%;
-  height: 200px;
-  max-height: 200px;
+.insight-react-fallback li strong {
+  color: var(--text-primary);
 }
 
 .insight-react-eyebrow {
@@ -1518,6 +1528,7 @@ footer {
   gap: 0.35rem;
   align-items: center;
 }
+
 
 .typing-indicator span {
   width: 0.45rem;
