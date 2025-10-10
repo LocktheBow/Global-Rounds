@@ -2394,6 +2394,9 @@ function renderTaskInsights() {
   if (!container) {
     return;
   }
+  container.style.height = '340px';
+  container.style.minHeight = '0';
+  container.style.alignItems = 'stretch';
   const embed = getEmbedApi();
   const insight = getCommandTaskInsights();
   let reactMounted = false;
@@ -2488,6 +2491,9 @@ function renderFinanceInsights() {
   if (!container) {
     return;
   }
+  container.style.height = '340px';
+  container.style.minHeight = '0';
+  container.style.alignItems = 'stretch';
   const embed = getEmbedApi();
   const insight = getCommandFinanceInsights();
   let reactMounted = false;
@@ -2581,6 +2587,9 @@ function renderInventoryInsights() {
   if (!container) {
     return;
   }
+  container.style.height = '340px';
+  container.style.minHeight = '0';
+  container.style.alignItems = 'stretch';
   const scenario = state.inventoryScenarioResult;
   const baseInsight = scenario ? buildScenarioInventoryInsight(scenario) : getCommandInventoryInsights();
   const embed = getEmbedApi();
