@@ -352,7 +352,7 @@ input[type='range'] {
 /* Ensure embedded React cards don't inherit tall heights from grid/flex */
 .react-insight-card,
 .react-insight-card.react-mounted {
-  height: auto !important;
+  /* allow JS to pin height; avoid !important on height */
   min-height: 0 !important;
   align-items: stretch !important;
   align-self: start !important; /* don't stretch to row height */
