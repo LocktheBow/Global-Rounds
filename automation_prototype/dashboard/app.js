@@ -2332,6 +2332,35 @@ function renderInsights() {
   renderInventoryInsights();
   renderRevenueMini();
   renderSupplierMini();
+  validateInsightHeights();
+}
+
+function validateInsightHeights() {
+  try {
+    const ids = ['react-revenue-mini', 'react-supplier-mini', 'react-task-card', 'react-finance-card', 'react-inventory-card'];
+    const nodes = ids.map((id) => document.getElementById(id)).filter(Boolean);
+    const report = nodes.map((el) => ({ id: el.id, h: el.offsetHeight }));
+    if (typeof console !== 'undefined') {
+      console.info('[InsightsHeight]', report);
+    }
+    // If any automation card is taller than the tallest mini by > 40px, try to collapse extra height.
+    const ref = Math.max(
+      document.getElementById('react-revenue-mini')?.offsetHeight || 0,
+      document.getElementById('react-supplier-mini')?.offsetHeight || 0,
+    );
+    ['react-task-card', 'react-finance-card', 'react-inventory-card'].forEach((id) => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      const h = el.offsetHeight;
+      if (ref > 0 && h - ref > 40) {
+        el.style.height = 'auto';
+        el.style.minHeight = '0';
+        el.style.alignItems = 'stretch';
+      }
+    });
+  } catch (e) {
+    // no-op
+  }
 }
 
 function renderTaskInsights() {

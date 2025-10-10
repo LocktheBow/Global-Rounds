@@ -348,6 +348,19 @@ input[type='range'] {
   display: none;
 }
 
+/* Ensure embedded React cards don't inherit tall heights from grid/flex */
+.react-insight-card,
+.react-insight-card.react-mounted {
+  height: auto !important;
+  min-height: 0 !important;
+  align-items: stretch !important;
+}
+.react-insight-card > *,
+.react-insight-card.react-mounted > * {
+  height: auto !important;
+  min-height: 0 !important;
+}
+
 .insight-react-fallback {
   display: flex;
   min-height: 180px;
