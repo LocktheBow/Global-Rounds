@@ -1007,6 +1007,24 @@ function renderInsightFallback(container, { eyebrow, headline, copy, items }) {
   });
 }
 
+function ensureCanvas(container, id) {
+  try {
+    const fallback = container.querySelector('.insight-react-fallback');
+    if (!fallback) return null;
+    let canvas = fallback.querySelector(`#${id}`);
+    if (!canvas) {
+      canvas = document.createElement('canvas');
+      canvas.id = id;
+      canvas.className = 'chart-canvas';
+      canvas.setAttribute('aria-hidden', 'true');
+      fallback.appendChild(canvas);
+    }
+    return canvas;
+  } catch (_) {
+    return null;
+  }
+}
+
 function prepareCanvas(canvas) {
   if (!canvas) {
     return null;
@@ -2432,7 +2450,7 @@ function renderTaskInsights() {
       copy: fallbackCopy,
       items: breakdown,
     });
-    const canvas = container.querySelector('#insight-task-canvas');
+    const canvas = ensureCanvas(container, 'insight-task-canvas');
     if (canvas) {
       try {
         const segments = Array.isArray(insight?.dataset)
@@ -2514,7 +2532,7 @@ function renderFinanceInsights() {
       copy,
       items: metrics,
     });
-    const canvas = container.querySelector('#insight-finance-canvas');
+    const canvas = ensureCanvas(container, 'insight-finance-canvas');
     if (canvas) {
       try {
         const bars = Array.isArray(insight?.dataset)
@@ -2594,7 +2612,7 @@ function renderInventoryInsights() {
       copy,
       items: metrics,
     });
-    const canvas = container.querySelector('#insight-inventory-canvas');
+    const canvas = ensureCanvas(container, 'insight-inventory-canvas');
     if (canvas) {
       try {
         const bars = Array.isArray(baseInsight?.dataset)
