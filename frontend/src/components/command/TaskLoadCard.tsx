@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import type { EChartsOption } from 'echarts';
 import ReactECharts from 'echarts-for-react';
 import type { CommandTaskInsight } from '../../types/command';
@@ -62,6 +62,25 @@ export const TaskLoadCard = ({ insight, loading = false, error }: TaskLoadCardPr
     } satisfies EChartsOption;
   }, [hasData, usable]);
 
+  const chartRef = useRef<any | null>(null);
+  const handleChartReady = (instance: any) => {
+    chartRef.current = instance;
+    try {
+      requestAnimationFrame(() => instance.resize());
+      window.setTimeout(() => instance.resize(), 100);
+    } catch {}
+  };
+
+  useEffect(() => {
+    const onResize = () => {
+      try {
+        if (chartRef.current) chartRef.current.resize();
+      } catch {}
+    };
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
+
   const badgeCopy = useMemo(() => {
     if (slaBreaches <= 0) return null;
     return slaBreaches === 1 ? '1 SLA at risk' : `${slaBreaches} SLAs at risk`;
@@ -95,7 +114,13 @@ export const TaskLoadCard = ({ insight, loading = false, error }: TaskLoadCardPr
               Loading task insights…
             </span>
           ) : hasData && option ? (
-            <ReactECharts option={option} style={{ height: 220, width: '100%' }} lazyUpdate />
+            <ReactECharts
+              option={option}
+              notMerge
+              lazyUpdate
+              onChartReady={handleChartReady}
+              style={{ height: 220, width: '100%' }}
+            />
           ) : (
             <p className="text-center text-sm text-slate-500">
               {error ?? emptyFallback}
