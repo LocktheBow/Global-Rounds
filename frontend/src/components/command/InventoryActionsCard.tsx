@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useRef, useState, useEffect } from 'react';
 import type { CommandInventoryInsight } from '../../types/command';
 
 interface InventoryActionsCardProps {
@@ -42,12 +42,28 @@ export const InventoryActionsCard = ({
   const scenarioReady = insight?.scenarioAvailable ?? false;
   const maxValue = normalized.reduce((acc, segment) => Math.max(acc, segment.value), 0);
 
+  const containerRef = useRef<HTMLElement | null>(null);
+  const headerRef = useRef<HTMLElement | null>(null);
+  const [bodyHeight, setBodyHeight] = useState<number>(200);
+  useEffect(() => {
+    const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(() => {
+      if (!containerRef.current || !headerRef.current) return;
+      const ch = containerRef.current.clientHeight || 0;
+      const hh = headerRef.current.clientHeight || 0;
+      setBodyHeight(Math.max(ch - hh - 24, 120));
+    }) : null;
+    if (ro && containerRef.current) ro.observe(containerRef.current);
+    if (ro && headerRef.current) ro.observe(headerRef.current);
+    return () => ro && ro.disconnect();
+  }, []);
+
   return (
     <article
       className="gr-auto rounded-xl border border-slate-800 bg-slate-900/70 p-4 shadow-lg"
-      style={compact ? { height: 'auto', display: 'block', maxHeight: 340, overflowY: 'auto' } : { height: 'auto', display: 'block' }}
+      style={compact ? { height: 'auto', display: 'block', maxHeight: 340 } : { height: 'auto', display: 'block' }}
+      ref={(el) => (containerRef.current = el)}
     >
-      <header className="mb-2 flex flex-col gap-1">
+      <header className="mb-2 flex flex-col gap-1" ref={(el) => (headerRef.current = el)}>
         <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">
           Inventory actions
         </p>
@@ -75,8 +91,8 @@ export const InventoryActionsCard = ({
           <p className="text-sm text-slate-500">{error ?? emptyFallback}</p>
         ) : null}
 
-        <ul className="flex flex-col gap-2">
-          {normalized.map((segment) => {
+        <ul className="flex flex-col gap-2" style={compact ? { maxHeight: bodyHeight, overflow: 'hidden' } : undefined}>
+          {normalized.slice(0, compact ? Math.max(1, Math.floor(bodyHeight / 32)) : normalized.length).map((segment) => {
             const width =
               maxValue > 0
                 ? segment.value > 0
@@ -107,7 +123,11 @@ export const InventoryActionsCard = ({
           })}
         </ul>
 
-        {compact ? null : (
+        {compact ? (
+          normalized.length > Math.max(1, Math.floor(bodyHeight / 32)) ? (
+            <div className="mt-1 text-right text-xs text-slate-400">+ View all</div>
+          ) : null
+        ) : (
           <footer className="text-xs text-slate-500">
             Tracking {totalSkus.toLocaleString()} SKU{totalSkus === 1 ? '' : 's'} across the forecast.
           </footer>

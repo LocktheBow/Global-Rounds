@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { EChartsOption } from 'echarts';
 import ReactECharts from 'echarts-for-react';
 import type { CommandTaskInsight } from '../../types/command';
@@ -66,6 +66,9 @@ export const TaskLoadCard = ({ insight, loading = false, error, compact = false 
   }, [hasData, usable]);
 
   const chartRef = useRef<any | null>(null);
+  const containerRef = useRef<HTMLElement | null>(null);
+  const headerRef = useRef<HTMLElement | null>(null);
+  const [bodyHeight, setBodyHeight] = useState<number>(200);
   const handleChartReady = (instance: any) => {
     chartRef.current = instance;
     try {
@@ -75,13 +78,30 @@ export const TaskLoadCard = ({ insight, loading = false, error, compact = false 
   };
 
   useEffect(() => {
+    const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(() => {
+      if (!containerRef.current || !headerRef.current) return;
+      const ch = containerRef.current.clientHeight || 0;
+      const hh = headerRef.current.clientHeight || 0;
+      const avail = Math.max(ch - hh - 28, 140);
+      setBodyHeight(avail);
+    }) : null;
+    if (ro && containerRef.current) ro.observe(containerRef.current);
+    if (ro && headerRef.current) ro.observe(headerRef.current);
     const onResize = () => {
       try {
         if (chartRef.current) chartRef.current.resize();
+        if (containerRef.current && headerRef.current) {
+          const ch = containerRef.current.clientHeight || 0;
+          const hh = headerRef.current.clientHeight || 0;
+          setBodyHeight(Math.max(ch - hh - 28, 140));
+        }
       } catch {}
     };
     window.addEventListener('resize', onResize);
-    return () => window.removeEventListener('resize', onResize);
+    return () => {
+      window.removeEventListener('resize', onResize);
+      if (ro) ro.disconnect();
+    };
   }, []);
 
   const badgeCopy = useMemo(() => {
@@ -94,11 +114,12 @@ export const TaskLoadCard = ({ insight, loading = false, error, compact = false 
       className="gr-auto rounded-xl border border-slate-800 bg-slate-900/70 p-4 shadow-lg"
       style={
         compact
-          ? { height: 'auto', display: 'block', maxHeight: 340, overflowY: 'auto' }
+          ? { height: 'auto', display: 'block', maxHeight: 340 }
           : { height: 'auto', display: 'block' }
       }
+      ref={(el) => (containerRef.current = el)}
     >
-      <header className="mb-2 flex flex-col gap-1">
+      <header className="mb-2 flex flex-col gap-1" ref={(el) => (headerRef.current = el)}>
         <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">
           Unified queue
         </p>
@@ -129,7 +150,7 @@ export const TaskLoadCard = ({ insight, loading = false, error, compact = false 
               notMerge
               lazyUpdate
               onChartReady={handleChartReady}
-              style={{ height: compact ? 200 : 220, width: '100%' }}
+              style={{ height: compact ? bodyHeight : 220, width: '100%' }}
             />
           ) : (
             <p className="text-center text-sm text-slate-500">
