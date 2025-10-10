@@ -1020,10 +1020,14 @@ function ensureCanvas(container, id) {
     if (!canvas) {
       canvas = document.createElement('canvas');
       canvas.id = id;
-      canvas.className = 'chart-canvas';
+      canvas.className = 'chart-canvas insight-canvas';
       canvas.setAttribute('aria-hidden', 'true');
       fallback.appendChild(canvas);
     }
+    canvas.classList.add('insight-canvas');
+    canvas.style.width = '100%';
+    canvas.style.height = '200px';
+    canvas.style.maxHeight = '200px';
     return canvas;
   } catch (_) {
     return null;
@@ -1040,8 +1044,11 @@ function prepareCanvas(canvas) {
   }
   const dpr = window.devicePixelRatio || 1;
   const rect = canvas.getBoundingClientRect();
-  const width = Math.max(rect.width || canvas.clientWidth || canvas.width || 260, 1);
-  const height = Math.max(rect.height || canvas.clientHeight || canvas.height || 180, 1);
+  const styleWidth = parseFloat(canvas.style.width) || 0;
+  const styleHeight = parseFloat(canvas.style.height) || 0;
+  const parentWidth = canvas.parentElement ? canvas.parentElement.clientWidth : 0;
+  const width = Math.max(rect.width || canvas.clientWidth || parentWidth || styleWidth || canvas.width || 260, 1);
+  const height = Math.max(rect.height || canvas.clientHeight || styleHeight || canvas.height || 200, 1);
   canvas.style.width = `${width}px`;
   canvas.style.height = `${height}px`;
   canvas.width = Math.round(width * dpr);
@@ -2366,29 +2373,22 @@ function validateInsightHeights() {
     if (typeof console !== 'undefined') {
       console.info('[InsightsHeight]', report);
     }
-    // If any automation card is taller than the tallest mini by > 40px, try to collapse extra height.
-    const ref = Math.max(
+    const miniHeights = [
       document.getElementById('react-revenue-mini')?.offsetHeight || 0,
       document.getElementById('react-supplier-mini')?.offsetHeight || 0,
-    );
-    let adjusted = false;
-    ['react-task-card', 'react-finance-card', 'react-inventory-card'].forEach((id) => {
+    ];
+    const defaultHeight = 340;
+    const target = Math.max(defaultHeight, ...miniHeights.filter(Boolean));
+    ['react-revenue-mini', 'react-supplier-mini', 'react-task-card', 'react-finance-card', 'react-inventory-card'].forEach((id) => {
       const el = document.getElementById(id);
       if (!el) return;
-      const h = el.offsetHeight;
-      if (ref > 0 && h - ref > 40) {
-        el.style.height = `${ref}px`; // pin to mini height
-        el.style.minHeight = '0';
-        el.style.alignItems = 'stretch';
-        adjusted = true;
-      }
+      el.style.height = `${target}px`;
+      el.style.minHeight = '0';
+      el.style.alignItems = 'stretch';
     });
-    // Nudge ECharts to recompute layout if we changed sizes
-    if (adjusted) {
-      window.setTimeout(() => {
-        try { window.dispatchEvent(new Event('resize')); } catch (_) {}
-      }, 0);
-    }
+    window.setTimeout(() => {
+      try { window.dispatchEvent(new Event('resize')); } catch (_) {}
+    }, 0);
   } catch (e) {
     // no-op
   }
@@ -2396,12 +2396,19 @@ function validateInsightHeights() {
 
 function renderTaskInsights() {
   const container = elements.reactTaskCard;
-  if (!container) {
-    return;
-  }
-  const embed = getEmbedApi();
+  if (!container) return;
+  container.classList.remove('react-mounted');
+  container.style.height = '340px';
+  container.style.minHeight = '0';
+
   const insight = getCommandTaskInsights();
+  const total = Number(insight?.total ?? 0) || 0;
+  const slaBreaches = Number(insight?.slaBreaches ?? 0) || 0;
+  const headline = total > 0 ? `${total.toLocaleString()} tasks` : 'No active tasks';
+  const copy = slaBreaches > 0 ? `${slaBreaches.toLocaleString()} SLA${slaBreaches === 1 ? '' : 's'} at risk` : '';
+
   let reactMounted = false;
+  const embed = getEmbedApi();
   if (embed?.renderTaskCard) {
     try {
       embed.renderTaskCard(container, {
@@ -2409,64 +2416,18 @@ function renderTaskInsights() {
         loading: Boolean(state.commandLoading),
         error: state.commandError,
       });
-      // Verify paint before declaring React mounted
-      window.setTimeout(() => {
-        try {
-          const hasCanvas = !!container.querySelector('canvas');
-          const hasArticle = !!container.querySelector('article');
-          if (hasCanvas || hasArticle) {
-            container.classList.add('react-mounted');
-            reactMounted = true;
-          } else {
-            renderInsightFallback(container, {
-              eyebrow: 'Unified queue',
-              headline: fallbackHeadline,
-              copy: fallbackCopy,
-              items: breakdown,
-            });
-            const canvas = ensureCanvas(container, 'insight-task-canvas');
-            if (canvas) {
-              const segments = Array.isArray(insight?.dataset)
-                ? insight.dataset.map((s, i) => ({
-                    label: s.label,
-                    value: Number(s.value) || 0,
-                    color: s.color || CHART_COLORS[i % CHART_COLORS.length],
-                  }))
-                : [];
-              drawDonutChart(canvas, segments, {
-                centerLabel: total > 0 ? total.toLocaleString() : '0',
-                centerSubLabel: 'tasks',
-              });
-            }
-          }
-        } catch (_) {}
-      }, 60);
+      container.classList.add('react-mounted');
+      reactMounted = true;
     } catch (error) {
       console.error('Failed to render React task card', error);
     }
   }
 
-  const total = Number(insight?.total ?? 0);
-  const fallbackHeadline = total > 0 ? `${total.toLocaleString()} tasks` : 'No active tasks';
-  const fallbackCopy = state.commandError
-    || (total > 0
-      ? 'Unified queue snapshot available.'
-      : 'Run the agents to populate the unified queue.');
-  const breakdown = Array.isArray(insight?.dataset)
-    ? insight.dataset.map((segment) => {
-        const value = Number(segment?.value ?? 0);
-        return `<strong>${escapeHtml(segment?.label || '')}:</strong> ${value.toLocaleString()} tasks`;
-      })
-    : [];
-  if (insight?.slaBreaches) {
-    breakdown.unshift(`<strong>SLA breaches:</strong> ${Number(insight.slaBreaches).toLocaleString()}`);
-  }
   if (!reactMounted) {
-    container.classList.remove('react-mounted');
     renderInsightFallback(container, {
       eyebrow: 'Unified queue',
-      headline: fallbackHeadline,
-      copy: fallbackCopy,
+      headline,
+      copy,
       items: null,
       compact: true,
     });
@@ -2474,137 +2435,150 @@ function renderTaskInsights() {
     if (canvas) {
       try {
         const segments = Array.isArray(insight?.dataset)
-          ? insight.dataset.map((s, i) => ({
-              label: s.label,
-              value: Number(s.value) || 0,
-              color: s.color || CHART_COLORS[i % CHART_COLORS.length],
+          ? insight.dataset.map((segment, index) => ({
+              label: segment.label,
+              value: Number(segment.value) || 0,
+              color: segment.color || CHART_COLORS[index % CHART_COLORS.length],
             }))
           : [];
         drawDonutChart(canvas, segments, {
           centerLabel: total > 0 ? total.toLocaleString() : '0',
           centerSubLabel: 'tasks',
         });
-      } catch (_) {}
+      } catch (drawError) {
+        console.error('Failed to draw task insight chart', drawError);
+      }
     }
   }
 }
 
+
+
 function renderFinanceInsights() {
   const container = elements.reactFinanceCard;
-  if (!container) {
-    return;
-  }
-  // Always show our canvas visualization; do not rely on React mounting state
+  if (!container) return;
   container.classList.remove('react-mounted');
-  const embed = getEmbedApi();
+  container.style.height = '340px';
+  container.style.minHeight = '0';
+
   const insight = getCommandFinanceInsights();
+  const baseline = Number(insight?.meta?.baselineDso ?? FINANCE_DSO_BASELINE) || FINANCE_DSO_BASELINE;
+  const snapshotDate = insight?.meta?.snapshotDate ? new Date(insight.meta.snapshotDate).toLocaleDateString() : null;
+  const segmentTotal = Array.isArray(insight?.dataset)
+    ? insight.dataset.reduce((acc, segment) => acc + Number(segment?.value ?? 0), 0)
+    : 0;
+
+  const headline = segmentTotal > 0 ? `Savings snapshot (${formatChartNumber(segmentTotal)})` : 'No measurable impact yet';
+  const copy = snapshotDate ? `Baseline ${baseline} days • As of ${snapshotDate}` : `Baseline ${baseline} days`;
+
+  let reactMounted = false;
+  const embed = getEmbedApi();
   if (embed?.renderFinanceCard) {
     try {
-      // Render in background (ignored); we always draw canvas below
-      embed.renderFinanceCard(container, { insight, loading: Boolean(state.commandLoading), error: state.commandError });
+      embed.renderFinanceCard(container, {
+        insight,
+        loading: Boolean(state.commandLoading),
+        error: state.commandError,
+      });
+      container.classList.add('react-mounted');
+      reactMounted = true;
     } catch (error) {
       console.error('Failed to render React finance card', error);
     }
   }
 
   if (!reactMounted) {
-    container.classList.remove('react-mounted');
-  }
-  const baseline = insight?.meta?.baselineDso ?? FINANCE_DSO_BASELINE;
-  const snapshot = insight?.meta?.snapshotDate || null;
-  const segmentTotal = Array.isArray(insight?.dataset)
-    ? insight.dataset.reduce((acc, segment) => acc + Number(segment?.value ?? 0), 0)
-    : 0;
-  const headline = segmentTotal > 0 ? `Savings snapshot (${formatChartNumber(segmentTotal)})` : 'No measurable impact yet';
-  const copy = state.commandError
-    || (snapshot
-      ? `As of ${new Date(snapshot).toLocaleDateString()} • DSO baseline ${baseline} days.`
-      : `DSO baseline ${baseline} days.`);
-  const metrics = Array.isArray(insight?.dataset)
-    ? insight.dataset.map((segment) => {
-        const value = Number(segment?.value ?? 0);
-        const label = segment?.displayValue || formatChartNumber(value);
-        return `<strong>${escapeHtml(segment?.label || '')}:</strong> ${escapeHtml(String(label))}`;
-      })
-    : [];
-  // Always show fallback copy + canvas chart
-  renderInsightFallback(container, {
-    eyebrow: 'Finance pulse',
-    headline,
-    copy,
-    items: null,
-    compact: true,
-  });
-  const canvas = ensureCanvas(container, 'insight-finance-canvas');
-  if (canvas) {
-    try {
-      const bars = Array.isArray(insight?.dataset)
-        ? insight.dataset.map((s, i) => ({
-            label: s.label,
-            value: Number(s.value) || 0,
-            color: s.color || CHART_COLORS[i % CHART_COLORS.length],
-            displayValue: s.displayValue,
-          }))
-        : [];
-      drawHorizontalBarChart(canvas, bars, { paddingTop: 18, paddingBottom: 24 });
-    } catch (_) {}
+    renderInsightFallback(container, {
+      eyebrow: 'Finance pulse',
+      headline,
+      copy,
+      items: null,
+      compact: true,
+    });
+    const canvas = ensureCanvas(container, 'insight-finance-canvas');
+    if (canvas) {
+      try {
+        const bars = Array.isArray(insight?.dataset)
+          ? insight.dataset.map((segment, index) => ({
+              label: segment.label,
+              value: Number(segment.value) || 0,
+              color: segment.color || CHART_COLORS[index % CHART_COLORS.length],
+              displayValue: segment.displayValue,
+            }))
+          : [];
+        drawHorizontalBarChart(canvas, bars, { paddingTop: 16, paddingBottom: 20 });
+      } catch (drawError) {
+        console.error('Failed to draw finance insight chart', drawError);
+      }
+    }
   }
 }
 
+
+
 function renderInventoryInsights() {
   const container = elements.reactInventoryCard;
-  if (!container) {
-    return;
-  }
-  // Always force our canvas visualization; ignore React mount state
+  if (!container) return;
   container.classList.remove('react-mounted');
-  const scenario = state.inventoryScenarioResult;
-  const baseInsight = scenario ? buildScenarioInventoryInsight(scenario) : getCommandInventoryInsights();
+  container.style.height = '340px';
+  container.style.minHeight = '0';
+
+  const baseInsight = state.inventoryScenarioResult
+    ? buildScenarioInventoryInsight(state.inventoryScenarioResult)
+    : getCommandInventoryInsights();
+
+  const totalSkus = Number(baseInsight?.totalSkus ?? 0) || 0;
+  const scenarioReady = Boolean(state.inventoryScenarioResult);
+  const headline = totalSkus > 0 ? 'Prioritized SKU guidance' : 'Inventory steady';
+  const copy = scenarioReady
+    ? `Scenario ready • ${totalSkus.toLocaleString()} SKU${totalSkus === 1 ? '' : 's'}`
+    : totalSkus > 0
+      ? `${totalSkus.toLocaleString()} SKU${totalSkus === 1 ? '' : 's'} tracked`
+      : '';
+
+  let reactMounted = false;
   const embed = getEmbedApi();
   if (embed?.renderInventoryCard) {
     try {
-      embed.renderInventoryCard(container, { insight: baseInsight, loading: Boolean(state.commandLoading), error: state.commandError });
+      embed.renderInventoryCard(container, {
+        insight: baseInsight,
+        loading: Boolean(state.commandLoading),
+        error: state.commandError,
+      });
+      container.classList.add('react-mounted');
+      reactMounted = true;
     } catch (error) {
       console.error('Failed to render React inventory card', error);
     }
   }
-  container.classList.remove('react-mounted');
-  const totalSkus = Number(baseInsight?.totalSkus ?? 0);
-  const headline = totalSkus > 0 ? 'Prioritized SKU guidance' : 'Inventory steady';
-  const copy = state.commandError
-    || (scenario
-      ? 'Scenario projections ready.'
-      : totalSkus > 0
-        ? `Tracking ${totalSkus.toLocaleString()} SKU${totalSkus === 1 ? '' : 's'} across the forecast.`
-        : 'No active recommendations. Run the ordering agent to refresh.');
-  const metrics = Array.isArray(baseInsight?.dataset)
-    ? baseInsight.dataset.map((segment) => {
-        const value = Number(segment?.value ?? 0);
-        return `<strong>${escapeHtml(segment?.label || '')}:</strong> ${value.toLocaleString()} SKUs`;
-      })
-    : [];
-  // Always show fallback + canvas chart
-  renderInsightFallback(container, {
-    eyebrow: 'Inventory actions',
-    headline,
-    copy,
-    items: null,
-    compact: true,
-  });
-  const invCanvas = ensureCanvas(container, 'insight-inventory-canvas');
-  if (invCanvas) {
-    try {
-      const bars = Array.isArray(baseInsight?.dataset)
-        ? baseInsight.dataset.map((s, i) => ({
-            label: s.label,
-            value: Number(s.value) || 0,
-            color: s.color || CHART_COLORS[i % CHART_COLORS.length],
-          }))
-        : [];
-      drawBarChart(invCanvas, bars, { padding: 28 });
-    } catch (_) {}
+
+  if (!reactMounted) {
+    renderInsightFallback(container, {
+      eyebrow: 'Inventory actions',
+      headline,
+      copy,
+      items: null,
+      compact: true,
+    });
+    const canvas = ensureCanvas(container, 'insight-inventory-canvas');
+    if (canvas) {
+      try {
+        const bars = Array.isArray(baseInsight?.dataset)
+          ? baseInsight.dataset.map((segment, index) => ({
+              label: segment.label,
+              value: Number(segment.value) || 0,
+              color: segment.color || CHART_COLORS[index % CHART_COLORS.length],
+            }))
+          : [];
+        drawBarChart(canvas, bars, { padding: 24, groupSpacing: 18 });
+      } catch (drawError) {
+        console.error('Failed to draw inventory insight chart', drawError);
+      }
+    }
   }
 }
+
+
 
 function computeInventoryActionCounts(entries) {
   if (!Array.isArray(entries)) {
