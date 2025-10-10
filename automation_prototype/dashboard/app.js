@@ -973,7 +973,7 @@ function setInsightFallback(container, { headline, copy }) {
   }
 }
 
-function renderInsightFallback(container, { eyebrow, headline, copy, items }) {
+function renderInsightFallback(container, { eyebrow, headline, copy, items, compact = true }) {
   if (!container) {
     return;
   }
@@ -994,17 +994,22 @@ function renderInsightFallback(container, { eyebrow, headline, copy, items }) {
   if (copyEl && typeof copy === 'string') {
     copyEl.textContent = copy;
   }
-  let list = fallback.querySelector('ul');
-  if (!list) {
-    list = document.createElement('ul');
-    fallback.appendChild(list);
+  if (!compact && Array.isArray(items) && items.length) {
+    let list = fallback.querySelector('ul');
+    if (!list) {
+      list = document.createElement('ul');
+      fallback.appendChild(list);
+    }
+    list.innerHTML = '';
+    items.forEach((item) => {
+      const li = document.createElement('li');
+      li.innerHTML = item;
+      list.appendChild(li);
+    });
+  } else {
+    const list = fallback.querySelector('ul');
+    if (list) list.remove();
   }
-  list.innerHTML = '';
-  (items || []).forEach((item) => {
-    const li = document.createElement('li');
-    li.innerHTML = item;
-    list.appendChild(li);
-  });
 }
 
 function ensureCanvas(container, id) {
@@ -2462,7 +2467,8 @@ function renderTaskInsights() {
       eyebrow: 'Unified queue',
       headline: fallbackHeadline,
       copy: fallbackCopy,
-      items: breakdown,
+      items: null,
+      compact: true,
     });
     const canvas = ensureCanvas(container, 'insight-task-canvas');
     if (canvas) {
@@ -2526,7 +2532,8 @@ function renderFinanceInsights() {
     eyebrow: 'Finance pulse',
     headline,
     copy,
-    items: metrics,
+    items: null,
+    compact: true,
   });
   const canvas = ensureCanvas(container, 'insight-finance-canvas');
   if (canvas) {
@@ -2581,7 +2588,8 @@ function renderInventoryInsights() {
     eyebrow: 'Inventory actions',
     headline,
     copy,
-    items: metrics,
+    items: null,
+    compact: true,
   });
   const invCanvas = ensureCanvas(container, 'insight-inventory-canvas');
   if (invCanvas) {
