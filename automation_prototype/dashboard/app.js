@@ -2388,6 +2388,22 @@ function renderTaskInsights() {
       });
       container.classList.add('react-mounted');
       reactMounted = true;
+      // Verify React actually painted; otherwise show fallback
+      window.setTimeout(() => {
+        try {
+          const hasCanvas = !!container.querySelector('canvas');
+          const hasArticle = !!container.querySelector('article');
+          if (!hasCanvas && !hasArticle) {
+            container.classList.remove('react-mounted');
+            renderInsightFallback(container, {
+              eyebrow: 'Unified queue',
+              headline: fallbackHeadline,
+              copy: fallbackCopy,
+              items: breakdown,
+            });
+          }
+        } catch (_) {}
+      }, 50);
     } catch (error) {
       console.error('Failed to render React task card', error);
     }
@@ -2436,6 +2452,20 @@ function renderFinanceInsights() {
       });
       container.classList.add('react-mounted');
       reactMounted = true;
+      window.setTimeout(() => {
+        try {
+          const hasArticle = !!container.querySelector('article');
+          if (!hasArticle) {
+            container.classList.remove('react-mounted');
+            renderInsightFallback(container, {
+              eyebrow: 'Finance pulse',
+              headline,
+              copy,
+              items: metrics,
+            });
+          }
+        } catch (_) {}
+      }, 50);
     } catch (error) {
       console.error('Failed to render React finance card', error);
     }
@@ -2489,6 +2519,20 @@ function renderInventoryInsights() {
       });
       container.classList.add('react-mounted');
       reactMounted = true;
+      window.setTimeout(() => {
+        try {
+          const hasArticle = !!container.querySelector('article');
+          if (!hasArticle) {
+            container.classList.remove('react-mounted');
+            renderInsightFallback(container, {
+              eyebrow: 'Inventory actions',
+              headline,
+              copy,
+              items: metrics,
+            });
+          }
+        } catch (_) {}
+      }, 50);
     } catch (error) {
       console.error('Failed to render React inventory card', error);
     }
