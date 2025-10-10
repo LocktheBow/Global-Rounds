@@ -223,6 +223,7 @@ input[type='range'] {
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
   gap: 1.5rem;
   margin-top: 1.4rem;
+  align-items: start; /* prevent grid items from stretching tall */
 }
 
 .chart-card {
@@ -355,8 +356,6 @@ input[type='range'] {
   min-height: 0 !important;
   align-items: stretch !important;
   align-self: start !important; /* don't stretch to row height */
-  max-height: 380px !important; /* standardize card height to mini visuals */
-  overflow: hidden !important;
 }
 .react-insight-card > *,
 .react-insight-card.react-mounted > * {
