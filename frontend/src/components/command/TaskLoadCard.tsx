@@ -88,8 +88,8 @@ export const TaskLoadCard = ({ insight, loading = false, error }: TaskLoadCardPr
         </p>
       </header>
 
-      <div className="mt-4 flex flex-1 flex-col justify-between gap-4">
-        <div className="flex flex-1 flex-col items-center justify-center">
+      <div className="mt-4 flex flex-col gap-4">
+        <div className="flex items-center justify-center">
           {loading ? (
             <span className="text-xs text-slate-500" aria-live="polite">
               Loading task insights…

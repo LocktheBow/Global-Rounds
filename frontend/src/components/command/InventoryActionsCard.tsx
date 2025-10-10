@@ -61,7 +61,7 @@ export const InventoryActionsCard = ({
         </p>
       </header>
 
-      <div className="mt-4 flex flex-1 flex-col gap-4">
+      <div className="mt-4 flex flex-col gap-4">
         {loading ? (
           <span className="text-xs text-slate-500" aria-live="polite">
             Loading inventory insights…
@@ -70,7 +70,7 @@ export const InventoryActionsCard = ({
           <p className="text-sm text-slate-500">{error ?? emptyFallback}</p>
         ) : null}
 
-        <ul className="flex flex-1 flex-col gap-3">
+        <ul className="flex flex-col gap-3">
           {normalized.map((segment) => {
             const width =
               maxValue > 0
