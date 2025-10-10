@@ -2354,7 +2354,7 @@ function validateInsightHeights() {
       if (!el) return;
       const h = el.offsetHeight;
       if (ref > 0 && h - ref > 40) {
-        el.style.height = 'auto';
+        el.style.height = `${ref}px`; // pin to mini height
         el.style.minHeight = '0';
         el.style.alignItems = 'stretch';
         adjusted = true;
