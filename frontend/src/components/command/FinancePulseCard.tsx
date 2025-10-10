@@ -49,7 +49,10 @@ export const FinancePulseCard = ({ insight, loading = false, error }: FinancePul
   }, [insight?.meta?.snapshotDate]);
 
   return (
-    <article className="gr-auto rounded-xl border border-slate-800 bg-slate-900/70 p-4 shadow-lg" style={{ height: 'auto', display: 'block' }}>
+    <article
+      className="gr-auto rounded-xl border border-slate-800 bg-slate-900/70 p-4 shadow-lg"
+      style={{ height: 'auto', display: 'block', maxHeight: 340, overflow: 'hidden' }}
+    >
       <header className="mb-2 flex flex-col gap-1">
         <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">
           Finance pulse
