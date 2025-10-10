@@ -2404,24 +2404,38 @@ function renderTaskInsights() {
         loading: Boolean(state.commandLoading),
         error: state.commandError,
       });
-      container.classList.add('react-mounted');
-      reactMounted = true;
-      // Verify React actually painted; otherwise show fallback
+      // Verify paint before declaring React mounted
       window.setTimeout(() => {
         try {
           const hasCanvas = !!container.querySelector('canvas');
           const hasArticle = !!container.querySelector('article');
-          if (!hasCanvas && !hasArticle) {
-            container.classList.remove('react-mounted');
+          if (hasCanvas || hasArticle) {
+            container.classList.add('react-mounted');
+            reactMounted = true;
+          } else {
             renderInsightFallback(container, {
               eyebrow: 'Unified queue',
               headline: fallbackHeadline,
               copy: fallbackCopy,
               items: breakdown,
             });
+            const canvas = ensureCanvas(container, 'insight-task-canvas');
+            if (canvas) {
+              const segments = Array.isArray(insight?.dataset)
+                ? insight.dataset.map((s, i) => ({
+                    label: s.label,
+                    value: Number(s.value) || 0,
+                    color: s.color || CHART_COLORS[i % CHART_COLORS.length],
+                  }))
+                : [];
+              drawDonutChart(canvas, segments, {
+                centerLabel: total > 0 ? total.toLocaleString() : '0',
+                centerSubLabel: 'tasks',
+              });
+            }
           }
         } catch (_) {}
-      }, 50);
+      }, 60);
     } catch (error) {
       console.error('Failed to render React task card', error);
     }
@@ -2484,22 +2498,35 @@ function renderFinanceInsights() {
         loading: Boolean(state.commandLoading),
         error: state.commandError,
       });
-      container.classList.add('react-mounted');
-      reactMounted = true;
+      // Verify paint before declaring React mounted
       window.setTimeout(() => {
         try {
           const hasArticle = !!container.querySelector('article');
-          if (!hasArticle) {
-            container.classList.remove('react-mounted');
+          if (hasArticle) {
+            container.classList.add('react-mounted');
+            reactMounted = true;
+          } else {
             renderInsightFallback(container, {
               eyebrow: 'Finance pulse',
               headline,
               copy,
               items: metrics,
             });
+            const canvas = ensureCanvas(container, 'insight-finance-canvas');
+            if (canvas) {
+              const bars = Array.isArray(insight?.dataset)
+                ? insight.dataset.map((s, i) => ({
+                    label: s.label,
+                    value: Number(s.value) || 0,
+                    color: s.color || CHART_COLORS[i % CHART_COLORS.length],
+                    displayValue: s.displayValue,
+                  }))
+                : [];
+              drawHorizontalBarChart(canvas, bars, { paddingTop: 18, paddingBottom: 24 });
+            }
           }
         } catch (_) {}
-      }, 50);
+      }, 60);
     } catch (error) {
       console.error('Failed to render React finance card', error);
     }
@@ -2565,22 +2592,34 @@ function renderInventoryInsights() {
         loading: Boolean(state.commandLoading),
         error: state.commandError,
       });
-      container.classList.add('react-mounted');
-      reactMounted = true;
+      // Verify paint before declaring React mounted
       window.setTimeout(() => {
         try {
           const hasArticle = !!container.querySelector('article');
-          if (!hasArticle) {
-            container.classList.remove('react-mounted');
+          if (hasArticle) {
+            container.classList.add('react-mounted');
+            reactMounted = true;
+          } else {
             renderInsightFallback(container, {
               eyebrow: 'Inventory actions',
               headline,
               copy,
               items: metrics,
             });
+            const canvas = ensureCanvas(container, 'insight-inventory-canvas');
+            if (canvas) {
+              const bars = Array.isArray(baseInsight?.dataset)
+                ? baseInsight.dataset.map((s, i) => ({
+                    label: s.label,
+                    value: Number(s.value) || 0,
+                    color: s.color || CHART_COLORS[i % CHART_COLORS.length],
+                  }))
+                : [];
+              drawBarChart(canvas, bars, { padding: 28 });
+            }
           }
         } catch (_) {}
-      }, 50);
+      }, 60);
     } catch (error) {
       console.error('Failed to render React inventory card', error);
     }
