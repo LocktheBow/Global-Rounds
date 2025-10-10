@@ -64,6 +64,12 @@ const ensureRoot = (host: HTMLElement): RootRecord => {
     shadow.appendChild(container);
   } else {
     // Light DOM mounting for environments that don’t play nicely with Shadow DOM
+    // Normalize the host container to avoid inherited flex layouts/min-heights
+    host.style.display = 'block';
+    host.style.height = 'auto';
+    host.style.minHeight = '0';
+    host.style.alignItems = '';
+    host.style.justifyContent = '';
     host.innerHTML = '';
     const style = document.createElement('style');
     style.textContent = styles;
