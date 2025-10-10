@@ -16,23 +16,34 @@ export const RailFinanceMini = ({ insight, loading = false }: RailFinanceMiniPro
     const labels = rows.map((r) => r.label);
     const values = rows.map((r) => Number(r.value) || 0);
     const colors = rows.map((r, i) => r.color || ['#22d3ee', '#38bdf8', '#facc15'][i % 3]);
+    const display = rows.map((r, i) => r.displayValue ?? (Number(r.value) || 0).toLocaleString());
     const max = Math.max(...values, 1);
+    const normalized = values.map((v, i) => ({ value: (v / max) * 100, raw: display[i], color: colors[i] }));
     return {
       aria: { enabled: true },
-      grid: { left: 120, right: 16, top: 24, bottom: 52 },
+      grid: { left: 140, right: 24, top: 24, bottom: 56 },
       xAxis: {
         type: 'value',
-        axisLabel: { color: '#cbd5f5', formatter: (v: number) => `${v.toLocaleString()}` },
+        axisLabel: { color: '#cbd5f5', formatter: (v: number) => `${v}%` },
         splitLine: { lineStyle: { color: '#1e293b' } },
-        max,
+        max: 100,
       },
       yAxis: { type: 'category', inverse: true, data: labels, axisLabel: { color: '#cbd5f5' } },
-      tooltip: { trigger: 'item', valueFormatter: (v: number) => v.toLocaleString() },
+      tooltip: {
+        trigger: 'item',
+        formatter: (p: any) => `${p.name}: ${display[p.dataIndex]}`,
+      },
       series: [
         {
           type: 'bar',
-          data: values.map((v, i) => ({ value: v, itemStyle: { color: colors[i] } })),
+          data: normalized.map((n) => ({ value: n.value, itemStyle: { color: n.color }, raw: n.raw })),
           barWidth: 16,
+          label: {
+            show: true,
+            position: 'right',
+            color: '#cbd5f5',
+            formatter: (p: any) => p.data?.raw ?? '',
+          },
         },
       ],
     } satisfies EChartsOption;
