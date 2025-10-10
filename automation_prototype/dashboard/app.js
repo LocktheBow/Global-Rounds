@@ -2394,7 +2394,7 @@ function renderTaskInsights() {
   if (!container) {
     return;
   }
-  container.style.height = '340px';
+  container.style.height = '360px';
   container.style.minHeight = '0';
   container.style.alignItems = 'stretch';
   const embed = getEmbedApi();
@@ -2491,7 +2491,7 @@ function renderFinanceInsights() {
   if (!container) {
     return;
   }
-  container.style.height = '340px';
+  container.style.height = '360px';
   container.style.minHeight = '0';
   container.style.alignItems = 'stretch';
   const embed = getEmbedApi();
@@ -2587,7 +2587,7 @@ function renderInventoryInsights() {
   if (!container) {
     return;
   }
-  container.style.height = '340px';
+  container.style.height = '360px';
   container.style.minHeight = '0';
   container.style.alignItems = 'stretch';
   const scenario = state.inventoryScenarioResult;
