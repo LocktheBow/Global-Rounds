@@ -7,11 +7,12 @@ interface TaskLoadCardProps {
   insight: CommandTaskInsight | null;
   loading?: boolean;
   error?: string | null;
+  compact?: boolean;
 }
 
 const emptyFallback = 'Run the agents to populate the unified queue.';
 
-export const TaskLoadCard = ({ insight, loading = false, error }: TaskLoadCardProps) => {
+export const TaskLoadCard = ({ insight, loading = false, error, compact = false }: TaskLoadCardProps) => {
   const fallbackSegments = [
     { label: 'Open', value: 0, color: '#38bdf8' },
     { label: 'In Progress', value: 0, color: '#22d3ee' },
@@ -89,7 +90,7 @@ export const TaskLoadCard = ({ insight, loading = false, error }: TaskLoadCardPr
   return (
     <article
       className="gr-auto rounded-xl border border-slate-800 bg-slate-900/70 p-4 shadow-lg"
-      style={{ height: 'auto', display: 'block', maxHeight: 340, overflow: 'hidden' }}
+      style={compact ? { height: 'auto', display: 'block', maxHeight: 340 } : { height: 'auto', display: 'block' }}
     >
       <header className="mb-2 flex flex-col gap-1">
         <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">
@@ -122,7 +123,7 @@ export const TaskLoadCard = ({ insight, loading = false, error }: TaskLoadCardPr
               notMerge
               lazyUpdate
               onChartReady={handleChartReady}
-              style={{ height: 200, width: '100%' }}
+              style={{ height: compact ? 200 : 220, width: '100%' }}
             />
           ) : (
             <p className="text-center text-sm text-slate-500">
@@ -131,7 +132,8 @@ export const TaskLoadCard = ({ insight, loading = false, error }: TaskLoadCardPr
           )}
         </div>
 
-        <ul className="grid gap-2 text-sm text-slate-300">
+        {!compact ? (
+          <ul className="grid gap-2 text-sm text-slate-300">
           {segmentsForDisplay.map((segment) => (
             <li key={segment.label} className="flex items-center justify-between gap-2">
               <span className="flex items-center gap-2">
@@ -145,7 +147,8 @@ export const TaskLoadCard = ({ insight, loading = false, error }: TaskLoadCardPr
               <span className="font-medium">{segment.value.toLocaleString()}</span>
             </li>
           ))}
-        </ul>
+          </ul>
+        ) : null}
       </div>
     </article>
   );

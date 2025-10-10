@@ -95,7 +95,7 @@ const renderTaskCard = (host: HTMLElement, props: TaskProps) => {
   const { root } = ensureRoot(host);
   root.render(
     <StrictMode>
-      <TaskLoadCard {...props} />
+      <TaskLoadCard {...props} compact />
     </StrictMode>,
   );
 };
@@ -104,7 +104,7 @@ const renderFinanceCard = (host: HTMLElement, props: FinanceProps) => {
   const { root } = ensureRoot(host);
   root.render(
     <StrictMode>
-      <FinancePulseCard {...props} />
+      <FinancePulseCard {...props} compact />
     </StrictMode>,
   );
 };
@@ -113,7 +113,7 @@ const renderInventoryCard = (host: HTMLElement, props: InventoryProps) => {
   const { root } = ensureRoot(host);
   root.render(
     <StrictMode>
-      <InventoryActionsCard {...props} />
+      <InventoryActionsCard {...props} compact />
     </StrictMode>,
   );
 };

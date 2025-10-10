@@ -5,6 +5,7 @@ interface FinancePulseCardProps {
   insight: CommandFinanceInsight | null;
   loading?: boolean;
   error?: string | null;
+  compact?: boolean;
 }
 
 const defaultSegments = [
@@ -15,7 +16,7 @@ const defaultSegments = [
 
 const emptyFallback = 'Run the finance agent to populate ROI metrics.';
 
-export const FinancePulseCard = ({ insight, loading = false, error }: FinancePulseCardProps) => {
+export const FinancePulseCard = ({ insight, loading = false, error, compact = false }: FinancePulseCardProps) => {
   const normalized = useMemo(() => {
     if (!insight?.dataset || insight.dataset.length === 0) {
       return defaultSegments.map((segment) => ({
@@ -51,7 +52,7 @@ export const FinancePulseCard = ({ insight, loading = false, error }: FinancePul
   return (
     <article
       className="gr-auto rounded-xl border border-slate-800 bg-slate-900/70 p-4 shadow-lg"
-      style={{ height: 'auto', display: 'block', maxHeight: 340, overflow: 'hidden' }}
+      style={compact ? { height: 'auto', display: 'block', maxHeight: 340 } : { height: 'auto', display: 'block' }}
     >
       <header className="mb-2 flex flex-col gap-1">
         <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">
@@ -74,7 +75,7 @@ export const FinancePulseCard = ({ insight, loading = false, error }: FinancePul
           <p className="text-sm text-slate-500">{error ?? emptyFallback}</p>
         ) : null}
 
-        <ul className="flex flex-col gap-3">
+        <ul className="flex flex-col gap-2">
           {normalized.map((segment) => {
             const width =
               maxValue > 0
@@ -109,10 +110,12 @@ export const FinancePulseCard = ({ insight, loading = false, error }: FinancePul
           })}
         </ul>
 
-        <footer className="text-xs text-slate-500">
-          <p>DSO baseline {baselineDso} days.</p>
-          {snapshotCopy ? <p>As of {snapshotCopy}.</p> : null}
-        </footer>
+        {compact ? null : (
+          <footer className="text-xs text-slate-500">
+            <p>DSO baseline {baselineDso} days.</p>
+            {snapshotCopy ? <p>As of {snapshotCopy}.</p> : null}
+          </footer>
+        )}
       </div>
     </article>
   );

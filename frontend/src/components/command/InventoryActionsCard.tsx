@@ -5,6 +5,7 @@ interface InventoryActionsCardProps {
   insight: CommandInventoryInsight | null;
   loading?: boolean;
   error?: string | null;
+  compact?: boolean;
 }
 
 const defaultSegments = [
@@ -19,6 +20,7 @@ export const InventoryActionsCard = ({
   insight,
   loading = false,
   error,
+  compact = false,
 }: InventoryActionsCardProps) => {
   const normalized = useMemo(() => {
     if (!insight?.dataset || insight.dataset.length === 0) {
@@ -43,7 +45,7 @@ export const InventoryActionsCard = ({
   return (
     <article
       className="gr-auto rounded-xl border border-slate-800 bg-slate-900/70 p-4 shadow-lg"
-      style={{ height: 'auto', display: 'block', maxHeight: 340, overflow: 'hidden' }}
+      style={compact ? { height: 'auto', display: 'block', maxHeight: 340 } : { height: 'auto', display: 'block' }}
     >
       <header className="mb-2 flex flex-col gap-1">
         <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">
@@ -73,7 +75,7 @@ export const InventoryActionsCard = ({
           <p className="text-sm text-slate-500">{error ?? emptyFallback}</p>
         ) : null}
 
-        <ul className="flex flex-col gap-3">
+        <ul className="flex flex-col gap-2">
           {normalized.map((segment) => {
             const width =
               maxValue > 0
@@ -105,9 +107,11 @@ export const InventoryActionsCard = ({
           })}
         </ul>
 
-        <footer className="text-xs text-slate-500">
-          Tracking {totalSkus.toLocaleString()} SKU{totalSkus === 1 ? '' : 's'} across the forecast.
-        </footer>
+        {compact ? null : (
+          <footer className="text-xs text-slate-500">
+            Tracking {totalSkus.toLocaleString()} SKU{totalSkus === 1 ? '' : 's'} across the forecast.
+          </footer>
+        )}
       </div>
     </article>
   );
