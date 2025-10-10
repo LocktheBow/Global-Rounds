@@ -10,5 +10,6 @@
 }
 
 .gr-command-card {
-  min-height: 100%;
+  /* Allow React cards to size to content, avoiding tall gray space */
+  min-height: auto;
 }
