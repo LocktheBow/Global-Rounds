@@ -35,7 +35,7 @@ export const SupplierReliability = ({
   const option = useMemo<EChartsOption>(() => {
     return {
       aria: { enabled: true },
-      grid: { left: 130, right: 24, top: 40, bottom: 40 },
+      grid: { left: 150, right: 24, top: 40, bottom: 40 },
       tooltip: {
         trigger: 'item',
         valueFormatter: (value: number) => `${(value * 100).toFixed(1)}%`,
@@ -65,6 +65,7 @@ export const SupplierReliability = ({
         inverse: true,
         data: topSuppliers.map((supplier) => supplier.supplierName),
         axisLabel: {
+          margin: 10,
           color: (value: string) => (
             supplierSeries.suppliers.find((row) => row.supplierName === value)?.supplierId ===
             focusedSupplierId
