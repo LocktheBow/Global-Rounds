@@ -67,11 +67,7 @@ export const FinancePulseCard = ({ insight, loading = false, error, compact = fa
   return (
     <article
       className="gr-auto rounded-xl border border-slate-800 bg-slate-900/70 p-4 shadow-lg"
-      style={
-        compact
-          ? { height: 'auto', display: 'block', maxHeight: 340, overflowY: 'auto' }
-          : { height: 'auto', display: 'block' }
-      }
+      style={compact ? { height: 340, display: 'flex', flexDirection: 'column' } : { height: 'auto', display: 'block' }}
       ref={(el) => (containerRef.current = el)}
     >
       <header className="mb-2 flex flex-col gap-1" ref={(el) => (headerRef.current = el)}>

@@ -60,7 +60,7 @@ export const InventoryActionsCard = ({
   return (
     <article
       className="gr-auto rounded-xl border border-slate-800 bg-slate-900/70 p-4 shadow-lg"
-      style={compact ? { height: 'auto', display: 'block', maxHeight: 340 } : { height: 'auto', display: 'block' }}
+      style={compact ? { height: 340, display: 'flex', flexDirection: 'column' } : { height: 'auto', display: 'block' }}
       ref={(el) => (containerRef.current = el)}
     >
       <header className="mb-2 flex flex-col gap-1" ref={(el) => (headerRef.current = el)}>
@@ -82,7 +82,7 @@ export const InventoryActionsCard = ({
         </p>
       </header>
 
-      <div className="mt-2 flex flex-col gap-3" style={{ height: 'auto' }}>
+      <div className="mt-2 flex flex-col gap-3" style={compact ? { flex: 1, minHeight: 0 } : {}}>
         {loading ? (
           <span className="text-xs text-slate-500" aria-live="polite">
             Loading inventory insights…
