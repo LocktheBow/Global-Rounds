@@ -41,7 +41,7 @@ export const InventoryActionsCard = ({
   const maxValue = normalized.reduce((acc, segment) => Math.max(acc, segment.value), 0);
 
   return (
-    <article className="rounded-xl border border-slate-800 bg-slate-900/70 p-4 shadow-lg">
+    <article className="gr-auto rounded-xl border border-slate-800 bg-slate-900/70 p-4 shadow-lg">
       <header className="mb-2 flex flex-col gap-1">
         <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">
           Inventory actions

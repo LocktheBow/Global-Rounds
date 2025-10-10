@@ -12,4 +12,11 @@
 .gr-command-card {
   /* Allow React cards to size to content, avoiding tall gray space */
   min-height: auto;
+  display: block;
+}
+
+.gr-command-card .gr-auto {
+  height: auto !important;
+  min-height: 0 !important;
+  display: block !important;
 }
