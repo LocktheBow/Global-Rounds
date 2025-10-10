@@ -354,6 +354,9 @@ input[type='range'] {
   height: auto !important;
   min-height: 0 !important;
   align-items: stretch !important;
+  align-self: start !important; /* don't stretch to row height */
+  max-height: 380px !important; /* standardize card height to mini visuals */
+  overflow: hidden !important;
 }
 .react-insight-card > *,
 .react-insight-card.react-mounted > * {
