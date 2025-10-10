@@ -49,7 +49,7 @@ export const FinancePulseCard = ({ insight, loading = false, error }: FinancePul
   }, [insight?.meta?.snapshotDate]);
 
   return (
-    <article className="gr-auto rounded-xl border border-slate-800 bg-slate-900/70 p-4 shadow-lg">
+    <article className="gr-auto rounded-xl border border-slate-800 bg-slate-900/70 p-4 shadow-lg" style={{ height: 'auto', display: 'block' }}>
       <header className="mb-2 flex flex-col gap-1">
         <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">
           Finance pulse
@@ -62,7 +62,7 @@ export const FinancePulseCard = ({ insight, loading = false, error }: FinancePul
         </p>
       </header>
 
-      <div className="mt-2 flex flex-col gap-3">
+      <div className="mt-2 flex flex-col gap-3" style={{ height: 'auto' }}>
         {loading ? (
           <span className="text-xs text-slate-500" aria-live="polite">
             Loading finance insights…

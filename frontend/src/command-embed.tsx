@@ -61,6 +61,9 @@ const ensureRoot = (host: HTMLElement): RootRecord => {
 
     container = document.createElement('div');
     container.className = 'gr-command-card';
+    container.style.display = 'block';
+    container.style.height = 'auto';
+    container.style.minHeight = '0';
     shadow.appendChild(container);
   } else {
     // Light DOM mounting for environments that don’t play nicely with Shadow DOM
@@ -76,6 +79,9 @@ const ensureRoot = (host: HTMLElement): RootRecord => {
     host.appendChild(style);
     container = document.createElement('div');
     container.className = 'gr-command-card';
+    container.style.display = 'block';
+    container.style.height = 'auto';
+    container.style.minHeight = '0';
     host.appendChild(container);
   }
 
