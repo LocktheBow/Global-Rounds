@@ -2348,6 +2348,7 @@ function validateInsightHeights() {
       document.getElementById('react-revenue-mini')?.offsetHeight || 0,
       document.getElementById('react-supplier-mini')?.offsetHeight || 0,
     );
+    let adjusted = false;
     ['react-task-card', 'react-finance-card', 'react-inventory-card'].forEach((id) => {
       const el = document.getElementById(id);
       if (!el) return;
@@ -2356,8 +2357,15 @@ function validateInsightHeights() {
         el.style.height = 'auto';
         el.style.minHeight = '0';
         el.style.alignItems = 'stretch';
+        adjusted = true;
       }
     });
+    // Nudge ECharts to recompute layout if we changed sizes
+    if (adjusted) {
+      window.setTimeout(() => {
+        try { window.dispatchEvent(new Event('resize')); } catch (_) {}
+      }, 0);
+    }
   } catch (e) {
     // no-op
   }
