@@ -1,142 +1,109 @@
-import { useMemo, useRef, useState, useEffect } from 'react';
-import type { CommandFinanceInsight } from '../../types/command';
+import React from 'react';
+import ReactECharts from 'echarts-for-react';
+import type { CommandInsightsResponse } from '../../types/command';
 
 interface FinancePulseCardProps {
-  insight: CommandFinanceInsight | null;
+  insight: CommandInsightsResponse['finance'] | null;
   loading?: boolean;
   error?: string | null;
-  compact?: boolean;
 }
 
-const defaultSegments = [
-  { label: 'Labor hrs saved', color: '#22d3ee' },
-  { label: 'Projected cash ($K)', color: '#38bdf8' },
-  { label: 'DSO improvement', color: '#facc15' },
-] as const;
+const buildOption = (insight: CommandInsightsResponse['finance']) => {
+  const dataset = insight.dataset;
+  const values = dataset.map((segment) => ({
+    value: segment.value,
+    itemStyle: { color: segment.color },
+    displayValue: segment.displayValue,
+  }));
 
-const emptyFallback = 'Run the finance agent to populate ROI metrics.';
+  return {
+    tooltip: {
+      trigger: 'axis',
+      axisPointer: { type: 'shadow' },
+      formatter: (params: any[]) => {
+        if (!params.length) return '';
+        const item = dataset[params[0].dataIndex];
+        return `${item.label}<br/>${item.displayValue}`;
+      },
+    },
+    // Add more right padding to avoid clipping long labels like "Projected cash"
+    grid: { left: 160, right: 120, top: 24, bottom: 16, containLabel: false },
+    xAxis: {
+      type: 'value',
+      axisLine: { lineStyle: { color: '#64748b' } },
+      splitLine: { lineStyle: { color: 'rgba(148, 163, 184, 0.2)' } },
+    },
+    yAxis: {
+      type: 'category',
+      inverse: true,
+      data: dataset.map((segment) => segment.label),
+      axisTick: { show: false },
+      axisLine: { show: false },
+      axisLabel: { color: '#e2e8f0' },
+    },
+    series: [
+      {
+        type: 'bar',
+        barWidth: 18,
+        data: values,
+        label: {
+          show: true,
+          position: 'right',
+          formatter: (params: any) => dataset[params.dataIndex].displayValue,
+          color: '#e2e8f0',
+          fontWeight: 500,
+        },
+      },
+    ],
+  };
+};
 
-export const FinancePulseCard = ({ insight, loading = false, error, compact = false }: FinancePulseCardProps) => {
-  const containerRef = useRef<HTMLElement | null>(null);
-  const headerRef = useRef<HTMLElement | null>(null);
-  const [bodyHeight, setBodyHeight] = useState<number>(200);
-  useEffect(() => {
-    const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(() => {
-      if (!containerRef.current || !headerRef.current) return;
-      const ch = containerRef.current.clientHeight || 0;
-      const hh = headerRef.current.clientHeight || 0;
-      const avail = Math.max(ch - hh - 24, 120);
-      setBodyHeight(avail);
-    }) : null;
-    if (ro && containerRef.current) ro.observe(containerRef.current);
-    if (ro && headerRef.current) ro.observe(headerRef.current);
-    return () => ro && ro.disconnect();
-  }, []);
-  const normalized = useMemo(() => {
-    if (!insight?.dataset || insight.dataset.length === 0) {
-      return defaultSegments.map((segment) => ({
-        label: segment.label,
-        value: 0,
-        displayValue: '0',
-        color: segment.color,
-      }));
-    }
-    return insight.dataset.map((segment, index) => ({
-      label: segment.label,
-      value: Number(segment.value) || 0,
-      displayValue:
-        segment.displayValue ??
-        (Number(segment.value) || 0).toLocaleString(undefined, {
-          maximumFractionDigits: 1,
-        }),
-      color: segment.color ?? defaultSegments[index % defaultSegments.length].color,
-    }));
-  }, [insight?.dataset]);
+export const FinancePulseCard: React.FC<FinancePulseCardProps> = ({ insight, loading, error }) => {
+  if (loading) {
+    return (
+      <div className="rounded-xl border border-slate-800 bg-slate-900/70 p-4 shadow-lg">
+        <h3 className="text-sm font-medium uppercase tracking-wide text-slate-400">Finance Pulse</h3>
+        <p className="mt-4 text-sm text-slate-400">Refreshing performance metrics…</p>
+      </div>
+    );
+  }
 
-  const hasData = normalized.some((segment) => segment.value > 0);
-  const maxValue = normalized.reduce((acc, segment) => Math.max(acc, segment.value), 0);
-  const baselineDso = Number(insight?.meta?.baselineDso ?? 45) || 45;
-  const snapshotCopy = useMemo(() => {
-    const snapshot = insight?.meta?.snapshotDate;
-    if (!snapshot) return null;
-    const parsed = new Date(snapshot);
-    if (Number.isNaN(parsed.getTime())) return null;
-    return parsed.toLocaleDateString();
-  }, [insight?.meta?.snapshotDate]);
+  if (error) {
+    return (
+      <div className="rounded-xl border border-slate-800 bg-slate-900/70 p-4 shadow-lg">
+        <h3 className="text-sm font-medium uppercase tracking-wide text-slate-400">Finance Pulse</h3>
+        <p className="mt-4 text-sm text-rose-400">{error}</p>
+      </div>
+    );
+  }
+
+  if (!insight || !insight.dataset.length) {
+    return (
+      <div className="rounded-xl border border-slate-800 bg-slate-900/70 p-4 shadow-lg">
+        <h3 className="text-sm font-medium uppercase tracking-wide text-slate-400">Finance Pulse</h3>
+        <p className="mt-4 text-sm text-slate-400">Run the finance agent to populate ROI metrics.</p>
+      </div>
+    );
+  }
+
+  const option = buildOption(insight);
+  const snapshotCopy = insight.meta.snapshotDate
+    ? `As of ${new Date(insight.meta.snapshotDate).toLocaleDateString()}`
+    : `DSO baseline ${insight.meta.baselineDso} days`;
 
   return (
-    <article
-      className="gr-auto rounded-xl border border-slate-800 bg-slate-900/70 p-4 shadow-lg"
-      style={compact ? { height: 340, display: 'flex', flexDirection: 'column' } : { height: 'auto', display: 'block' }}
-      ref={(el) => (containerRef.current = el)}
-    >
-      <header className="mb-2 flex flex-col gap-1" ref={(el) => (headerRef.current = el)}>
-        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">
-          Finance pulse
-        </p>
-        <h3 className="text-lg font-semibold text-slate-100">
-          {hasData ? 'Savings snapshot' : 'No measurable impact yet'}
-        </h3>
-        <p className="text-xs text-slate-400">
-          Tracking reclaimed labor, projected cash, and days sales outstanding improvements.
-        </p>
-      </header>
-
-      <div className="mt-2 flex flex-col gap-3" style={{ height: 'auto' }}>
-        {loading ? (
-          <span className="text-xs text-slate-500" aria-live="polite">
-            Loading finance insights…
-          </span>
-        ) : !hasData ? (
-          <p className="text-sm text-slate-500">{error ?? emptyFallback}</p>
-        ) : null}
-
-        <ul className="flex flex-col gap-2" style={compact ? { maxHeight: bodyHeight, overflow: 'hidden' } : undefined}>
-          {normalized.slice(0, compact ? Math.max(1, Math.floor(bodyHeight / 32)) : normalized.length).map((segment) => {
-            const width =
-              maxValue > 0
-                ? segment.value > 0
-                  ? Math.max((segment.value / maxValue) * 100, 8)
-                  : 0
-                : 0;
-            return (
-              <li key={segment.label}>
-                <div className="flex items-center justify-between text-sm text-slate-300">
-                  <span className="flex items-center gap-2">
-                    <span
-                      className="h-2.5 w-2.5 rounded-full"
-                      style={{ backgroundColor: segment.color }}
-                      aria-hidden
-                    />
-                    {segment.label}
-                  </span>
-                  <span className="font-medium">{segment.displayValue}</span>
-                </div>
-                <div className="mt-2 h-2 rounded-full bg-slate-800">
-                  <div
-                    className="h-full rounded-full transition-[width]"
-                    style={{
-                      width: `${width}%`,
-                      backgroundColor: segment.color,
-                    }}
-                  />
-                </div>
-              </li>
-            );
-          })}
-        </ul>
-        {compact && normalized.length > Math.max(1, Math.floor(bodyHeight / 32)) ? (
-          <div className="mt-1 text-right text-xs text-slate-400">+ View all</div>
-        ) : null}
-
-        {compact ? null : (
-          <footer className="text-xs text-slate-500">
-            <p>DSO baseline {baselineDso} days.</p>
-            {snapshotCopy ? <p>As of {snapshotCopy}.</p> : null}
-          </footer>
-        )}
+    <div className="rounded-xl border border-slate-800 bg-slate-900/70 p-4 shadow-lg">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h3 className="text-sm font-medium uppercase tracking-wide text-slate-400">Finance Pulse</h3>
+          <p className="mt-1 text-base font-semibold text-slate-100">Automation impact</p>
+        </div>
       </div>
-    </article>
+      <div className="mt-4" style={{ height: 300 }}>
+        <ReactECharts option={option} style={{ height: '100%', width: '100%' }} notMerge opts={{ renderer: 'svg' }} />
+      </div>
+      <p className="mt-4 text-sm text-slate-400">{snapshotCopy}</p>
+    </div>
   );
 };
 

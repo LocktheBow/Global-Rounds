@@ -1,179 +1,137 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import type { EChartsOption } from 'echarts';
+import React from 'react';
 import ReactECharts from 'echarts-for-react';
-import type { CommandTaskInsight } from '../../types/command';
+import type { CommandInsightsResponse } from '../../types/command';
 
 interface TaskLoadCardProps {
-  insight: CommandTaskInsight | null;
+  insight: CommandInsightsResponse['tasks'] | null;
   loading?: boolean;
   error?: string | null;
-  compact?: boolean;
 }
 
-const emptyFallback = 'Run the agents to populate the unified queue.';
+const donutOption = (insight: CommandInsightsResponse['tasks']) => {
+  const { dataset, total } = insight;
+  const seriesData = dataset.map((segment) => ({
+    value: segment.value,
+    name: segment.label,
+    itemStyle: { color: segment.color },
+  }));
 
-export const TaskLoadCard = ({ insight, loading = false, error, compact = false }: TaskLoadCardProps) => {
-  const fallbackSegments = [
-    { label: 'Open', value: 0, color: '#38bdf8' },
-    { label: 'In Progress', value: 0, color: '#22d3ee' },
-    { label: 'Closed', value: 0, color: '#14b8a6' },
-  ];
-  const rawDataset = insight?.dataset ?? [];
-  const normalizedDataset =
-    rawDataset.length > 0
-      ? rawDataset.map((segment, index) => ({
-          label: segment.label,
-          value: Number(segment.value) || 0,
-          color: segment.color ?? fallbackSegments[index % fallbackSegments.length].color,
-        }))
-      : [];
-  const segmentsForDisplay = normalizedDataset.length > 0 ? normalizedDataset : fallbackSegments;
-  const total = Number(insight?.total ?? 0) || 0;
-  const slaBreaches = Number(insight?.slaBreaches ?? 0) || 0;
-  const usable = normalizedDataset.filter((segment) => segment.value > 0);
-  const hasData = usable.length > 0;
-
-  const option = useMemo<EChartsOption | null>(() => {
-    if (!hasData) return null;
-    const centerY = compact ? '46%' : '52%';
-    const radius = compact ? ['50%', '76%'] : ['50%', '78%'];
-    return {
-      aria: { enabled: true, decal: { show: false } },
-      tooltip: {
-        trigger: 'item',
-        valueFormatter: (value) => `${Number(value).toLocaleString()} tasks`,
-      },
-      series: [
-        {
-          name: 'Tasks by status',
-          type: 'pie',
-          radius,
-          center: ['50%', centerY],
-          avoidLabelOverlap: false,
-          label: { show: false },
-          itemStyle: {
-            borderColor: '#020617',
-            borderWidth: 2,
-          },
-          data: usable.map((segment) => ({
-            value: segment.value,
-            name: segment.label,
-            itemStyle: segment.color ? { color: segment.color } : undefined,
-          })),
+  return {
+    tooltip: {
+      trigger: 'item',
+      formatter: (params: any) => `${params.name}: ${params.value} (${params.percent}%)`,
+    },
+    series: [
+      {
+        type: 'pie',
+        radius: ['55%', '82%'],
+        center: ['50%', '55%'],
+        avoidLabelOverlap: true,
+        itemStyle: {
+          borderRadius: 8,
+          borderColor: '#0f172a',
+          borderWidth: 2,
         },
-      ],
-    } satisfies EChartsOption;
-  }, [hasData, usable]);
-
-  const chartRef = useRef<any | null>(null);
-  const containerRef = useRef<HTMLElement | null>(null);
-  const headerRef = useRef<HTMLElement | null>(null);
-  const [bodyHeight, setBodyHeight] = useState<number>(200);
-  const handleChartReady = (instance: any) => {
-    chartRef.current = instance;
-    try {
-      requestAnimationFrame(() => instance.resize());
-      window.setTimeout(() => instance.resize(), 100);
-    } catch {}
+        label: { show: false },
+        data: seriesData,
+      },
+      {
+        type: 'pie',
+        radius: [0, '48%'],
+        center: ['50%', '55%'],
+        label: { show: false },
+        itemStyle: { color: 'rgba(15, 23, 42, 0.85)' },
+        data: [{ value: 1 }],
+        silent: true,
+        z: -1,
+      },
+    ],
+    graphic: [
+      {
+        type: 'text',
+        left: 'center',
+        top: '46%',
+        style: {
+          text: `${total}`,
+          fill: '#e2e8f0',
+          fontSize: 26,
+          fontWeight: 600,
+        },
+      },
+      {
+        type: 'text',
+        left: 'center',
+        top: '58%',
+        style: {
+          text: 'tasks',
+          fill: '#94a3b8',
+          fontSize: 13,
+          fontWeight: 400,
+        },
+      },
+    ],
   };
+};
 
-  useEffect(() => {
-    const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(() => {
-      if (!containerRef.current || !headerRef.current) return;
-      const ch = containerRef.current.clientHeight || 0;
-      const hh = headerRef.current.clientHeight || 0;
-      const avail = Math.max(ch - hh - 28, 140);
-      setBodyHeight(avail);
-    }) : null;
-    if (ro && containerRef.current) ro.observe(containerRef.current);
-    if (ro && headerRef.current) ro.observe(headerRef.current);
-    const onResize = () => {
-      try {
-        if (chartRef.current) chartRef.current.resize();
-        if (containerRef.current && headerRef.current) {
-          const ch = containerRef.current.clientHeight || 0;
-          const hh = headerRef.current.clientHeight || 0;
-          setBodyHeight(Math.max(ch - hh - 28, 140));
-        }
-      } catch {}
-    };
-    window.addEventListener('resize', onResize);
-    return () => {
-      window.removeEventListener('resize', onResize);
-      if (ro) ro.disconnect();
-    };
-  }, []);
+export const TaskLoadCard: React.FC<TaskLoadCardProps> = ({ insight, loading, error }) => {
+  if (loading) {
+    return (
+      <div className="rounded-xl border border-slate-800 bg-slate-900/70 p-4 shadow-lg">
+        <h3 className="text-sm font-medium uppercase tracking-wide text-slate-400">Task Load</h3>
+        <p className="mt-4 text-sm text-slate-400">Loading task distribution…</p>
+      </div>
+    );
+  }
 
-  const badgeCopy = useMemo(() => {
-    if (slaBreaches <= 0) return null;
-    return slaBreaches === 1 ? '1 SLA at risk' : `${slaBreaches} SLAs at risk`;
-  }, [slaBreaches]);
+  if (error) {
+    return (
+      <div className="rounded-xl border border-slate-800 bg-slate-900/70 p-4 shadow-lg">
+        <h3 className="text-sm font-medium uppercase tracking-wide text-slate-400">Task Load</h3>
+        <p className="mt-4 text-sm text-rose-400">{error}</p>
+      </div>
+    );
+  }
+
+  if (!insight || insight.total === 0) {
+    return (
+      <div className="rounded-xl border border-slate-800 bg-slate-900/70 p-4 shadow-lg">
+        <h3 className="text-sm font-medium uppercase tracking-wide text-slate-400">Task Load</h3>
+        <p className="mt-4 text-sm text-slate-400">Run the agents to populate the unified queue.</p>
+      </div>
+    );
+  }
+
+  const option = donutOption(insight);
 
   return (
-    <article
-      className="gr-auto rounded-xl border border-slate-800 bg-slate-900/70 p-4 shadow-lg"
-      style={compact ? { height: 340, display: 'flex', flexDirection: 'column' } : { height: 'auto', display: 'block' }}
-      ref={(el) => (containerRef.current = el)}
-    >
-      <header className="mb-2 flex flex-col gap-1" ref={(el) => (headerRef.current = el)}>
-        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">
-          Unified queue
-        </p>
-        <div className="flex items-center gap-3">
-          <h3 className="text-lg font-semibold text-slate-100">
-            {total > 0 ? `${total.toLocaleString()} tasks` : 'No active tasks'}
-          </h3>
-          {badgeCopy ? (
-            <span className="inline-flex items-center rounded-full border border-rose-500/40 bg-rose-500/10 px-3 py-1 text-xs font-semibold text-rose-300">
-              {badgeCopy}
-            </span>
-          ) : null}
-        </div>
-        <p className="text-xs text-slate-400">
-          Live workload distribution across open, in-progress, and closed efforts.
-        </p>
-      </header>
-
-      <div className="mt-2 flex flex-col gap-3" style={compact ? { flex: 1, minHeight: 0 } : {}}>
+    <div className="rounded-xl border border-slate-800 bg-slate-900/70 p-4 shadow-lg">
+      <div className="flex items-start justify-between gap-3">
         <div>
-          {loading ? (
-            <span className="text-xs text-slate-500" aria-live="polite">
-              Loading task insights…
-            </span>
-          ) : hasData && option ? (
-            <ReactECharts
-              option={option}
-              notMerge
-              lazyUpdate
-              onChartReady={handleChartReady}
-              style={{ height: compact ? bodyHeight : 220, width: '100%' }}
-            />
-          ) : (
-            <p className="text-center text-sm text-slate-500">
-              {error ?? emptyFallback}
-            </p>
-          )}
+          <h3 className="text-sm font-medium uppercase tracking-wide text-slate-400">Task Load</h3>
+          <p className="mt-1 text-base font-semibold text-slate-100">Unified queue status</p>
         </div>
-
-        {!compact ? (
-          <ul className="grid gap-2 text-sm text-slate-300">
-          {segmentsForDisplay.map((segment) => (
-            <li key={segment.label} className="flex items-center justify-between gap-2">
-              <span className="flex items-center gap-2">
-                <span
-                  className="h-2.5 w-2.5 rounded-full"
-                  style={{ backgroundColor: segment.color ?? '#38bdf8' }}
-                  aria-hidden
-                />
-                {segment.label}
-              </span>
-              <span className="font-medium">{segment.value.toLocaleString()}</span>
-            </li>
-          ))}
-          </ul>
+        {insight.slaBreaches > 0 ? (
+          <span className="rounded-full bg-rose-500/10 px-3 py-1 text-xs font-medium text-rose-300">
+            {insight.slaBreaches} SLA at risk
+          </span>
         ) : null}
       </div>
-    </article>
+      <div className="mt-4" style={{ height: 300 }}>
+        <ReactECharts option={option} style={{ height: '100%', width: '100%' }} notMerge opts={{ renderer: 'svg' }} />
+      </div>
+      <ul className="mt-4 space-y-2 text-sm text-slate-300">
+        {insight.dataset.map((segment) => (
+          <li key={segment.label} className="flex items-center gap-2">
+            <span
+              className="inline-block h-2.5 w-2.5 rounded-full"
+              style={{ backgroundColor: segment.color }}
+            />
+            <span className="flex-1">{segment.label}</span>
+            <span className="font-semibold text-slate-100">{segment.value}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 };
 
